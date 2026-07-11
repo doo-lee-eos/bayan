@@ -408,6 +408,60 @@ body {
     color: var(--gold);
 }
 
+/* style.css has a generic ".hero form, .search-bar { ... }" rule meant
+   for a totally different (rounded, gold-button) search design used
+   elsewhere on the site. Because our actual <form> happens to sit
+   inside .hero, that selector matches it too by accident -- and
+   ".hero form" (class+element = specificity 0,1,1) is stronger than
+   plain ".hero-search" (0,1,0), so it silently wins: the underline bar
+   above gets replaced by a big rounded/padded card, and on mobile
+   style.css's own ".hero form { flex-direction: column }" rule stacks
+   the input full-height above the button -- the empty box you see.
+   Re-declaring everything here under ".hero .hero-search" (0,2,0)
+   outguns ".hero form" regardless of screen size or source order,
+   without touching style.css itself (other pages may rely on its
+   ".search-bar" rules intentionally). */
+.hero .hero-search {
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    padding: 0;
+    gap: 0;
+    backdrop-filter: none;
+    flex-direction: row;
+}
+
+.hero .hero-search input {
+    font-size: 16px;
+    padding: 10px 4px;
+}
+
+.hero .hero-search button {
+    width: auto;
+    background: transparent;
+    color: var(--muted);
+    padding: 10px 4px 10px 10px;
+    border-radius: 0;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    transition: color 0.15s ease;
+}
+
+.hero .hero-search button:hover {
+    color: var(--gold);
+    transform: none;
+}
+
+@media (max-width: 900px) {
+    .hero .hero-search input,
+    .hero .hero-search button {
+        font-size: 16px;
+    }
+    .hero .hero-search button { font-size: 12px; }
+}
+
 .hero-suggestions {
     margin-top: 14px;
     font-size: 12.5px;
