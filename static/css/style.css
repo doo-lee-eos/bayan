@@ -1,0 +1,467 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+:root{
+    /* Warm parchment / desert palette, matching the home page: cream
+       ground, espresso ink, and three warm accents (patina teal-green,
+       ochre gold, terracotta rust) standing in for the old cool
+       dark-mode trio. --teal/--gold/--blue keep their old variable
+       NAMES so every existing var(--teal) etc. reference still works. */
+    --bg:#f6ecd8;
+    --panel:rgba(94,66,34,.045);
+    --panel2:rgba(94,66,34,.06);
+    --border:rgba(94,66,34,.16);
+    --line:rgba(94,66,34,.24);
+    --text:#2e2013;
+    --muted:#7a6248;
+    --gold:#b8862f;
+    --teal:#3f8a76;
+    --blue:#b1573c;
+    --font-serif:Georgia,"Iowan Old Style","Palatino Linotype","Book Antiqua",serif;
+    --font-display:"Fraunces",var(--font-serif);
+    --font-arabic:"Amiri","Traditional Arabic",serif;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+
+    background:var(--bg);
+
+    color:var(--text);
+
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+
+    min-height:100vh;
+
+}
+
+/* ===========================
+   HEADER
+=========================== */
+
+.site-header{
+
+    position:sticky;
+
+    top:0;
+
+    z-index:100;
+
+    backdrop-filter:blur(18px);
+
+    background:rgba(246,236,216,.82);
+
+    border-bottom:1px solid rgba(94,66,34,.12);
+
+}
+
+.header-inner{
+
+    width:min(1400px,94%);
+
+    margin:auto;
+
+    height:82px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+}
+
+/* ===========================
+   BRAND
+=========================== */
+
+.brand{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:16px;
+
+    text-decoration:none;
+
+    color:inherit;
+
+}
+
+.brand-mark{
+
+    width:44px;
+
+    height:44px;
+
+    border-radius:50%;
+
+    border:1px solid rgba(184,134,47,.35);
+
+    color:var(--gold);
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:20px;
+
+    background:rgba(184,134,47,.06);
+
+}
+
+.brand-title{
+
+    font-size:22px;
+
+    font-weight:700;
+
+    letter-spacing:6px;
+
+}
+
+.brand-subtitle{
+
+    margin-top:2px;
+
+    font-size:10px;
+
+    letter-spacing:2px;
+
+    color:var(--muted);
+
+}
+
+/* ===========================
+   NAV
+=========================== */
+
+.main-nav{
+
+    display:flex;
+
+    gap:36px;
+
+}
+
+.main-nav a{
+
+    text-decoration:none;
+
+    color:var(--muted);
+
+    font-size:14px;
+
+    transition:.2s;
+
+}
+
+.main-nav a:hover,
+.main-nav a.active{
+
+    color:var(--text);
+
+}
+
+.theme-button{
+
+    width:42px;
+
+    height:42px;
+
+    border-radius:50%;
+
+    border:1px solid var(--border);
+
+    background:transparent;
+
+    color:var(--gold);
+
+    font-size:18px;
+
+    cursor:pointer;
+
+    transition:.2s;
+
+}
+
+.theme-button:hover{
+
+    border-color:var(--gold);
+
+}
+
+/* ===========================
+   MAIN
+=========================== */
+
+main{
+
+    width:min(1400px,94%);
+
+    margin:auto;
+
+}
+
+/* ===========================
+   INDEX HERO
+=========================== */
+
+.hero{
+
+    min-height:calc(100vh - 82px);
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    align-items:center;
+
+    text-align:center;
+
+}
+
+.hero h1{
+
+    font-family:var(--font-display);
+
+    font-size:74px;
+
+    font-weight:700;
+
+    letter-spacing:-2px;
+
+}
+
+.hero p{
+
+    margin-top:18px;
+
+    color:var(--muted);
+
+    font-size:20px;
+
+}
+
+/* ===========================
+   SEARCH
+=========================== */
+
+.hero form,
+.search-bar{
+
+    width:min(760px,100%);
+
+    margin-top:48px;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:14px;
+
+    background:var(--panel);
+
+    border:1px solid var(--border);
+
+    border-radius:18px;
+
+    padding:10px;
+
+    backdrop-filter:blur(16px);
+
+}
+
+.hero input,
+.search-bar input{
+
+    flex:1;
+
+    background:none;
+
+    border:none;
+
+    outline:none;
+
+    color:var(--text);
+
+    font-size:26px;
+
+    padding:16px 18px;
+
+}
+
+.hero input::placeholder,
+.search-bar input::placeholder{
+
+    color:var(--muted);
+
+}
+
+.hero button,
+.search-bar button{
+
+    border:none;
+
+    cursor:pointer;
+
+    background:linear-gradient(135deg,var(--gold),#e9c06b);
+
+    color:#111;
+
+    padding:16px 28px;
+
+    border-radius:14px;
+
+    font-size:15px;
+
+    font-weight:700;
+
+    transition:.2s;
+
+}
+
+.hero button:hover,
+.search-bar button:hover{
+
+    transform:translateY(-2px);
+
+}
+
+/* ===========================
+   SEARCH BAR ON RESULT PAGE
+=========================== */
+
+.result-search{
+
+    width:min(900px,100%);
+
+    margin:42px auto 50px;
+
+}
+
+/* ===========================
+   CARDS
+=========================== */
+
+.card{
+
+    background:var(--panel);
+
+    border:1px solid var(--border);
+
+    border-radius:18px;
+
+    backdrop-filter:blur(14px);
+
+    transition:.25s;
+
+}
+
+.card:hover{
+
+    border-color:rgba(184,134,47,.35);
+
+    transform:translateY(-4px);
+
+}
+
+/* ===========================
+   LINKS
+=========================== */
+
+a{
+
+    color:var(--blue);
+
+}
+
+a:hover{
+
+    color:var(--text);
+
+}
+
+/* ===========================
+   MOBILE
+=========================== */
+
+@media(max-width:900px){
+
+    .header-inner{
+
+        flex-direction:column;
+
+        justify-content:center;
+
+        height:auto;
+
+        padding:22px 0;
+
+        gap:18px;
+
+    }
+
+    .main-nav{
+
+        gap:18px;
+
+        flex-wrap:wrap;
+
+        justify-content:center;
+
+    }
+
+    .hero{
+
+        min-height:auto;
+
+        padding:100px 0;
+
+    }
+
+    .hero h1{
+
+        font-size:46px;
+
+    }
+
+    .hero p{
+
+        font-size:16px;
+
+    }
+
+    .hero input,
+    .search-bar input{
+
+        font-size:20px;
+
+    }
+
+    .hero form,
+    .search-bar{
+
+        flex-direction:column;
+
+    }
+
+    .hero button,
+    .search-bar button{
+
+        width:100%;
+
+    }
+
+}

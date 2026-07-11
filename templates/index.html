@@ -1,0 +1,914 @@
+{% extends "base.html" %}
+
+{% block title %}Bayan{% endblock %}
+
+{% block content %}
+
+<script>
+    // Runs immediately, before the rest of the (long) hero markup below --
+    // browsers restore the previous scroll position on reload/back-forward
+    // navigation by default, which would land mid-animation or past it
+    // entirely. Placed this early (rather than in the script tag at the
+    // bottom) so the jump-to-top happens before layout/paint, not as a
+    // visible snap afterward.
+    if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'manual';
+    }
+    window.scrollTo(0, 0);
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    /* Warm parchment / desert palette: cream ground, espresso ink,
+       and three warm accents (patina teal-green, ochre gold, terracotta
+       rust) standing in for the site's old cool dark-mode trio.
+       NOTE: --teal/--gold/--blue keep their old variable NAMES so every
+       existing var(--teal) etc. reference below still works untouched --
+       --blue in particular is no longer a blue at all, it's terracotta,
+       so don't let the name mislead future edits here. */
+    --bg: #f6ecd8;
+    --panel: rgba(94,66,34,0.045);
+    --border: rgba(94,66,34,0.16);
+    --line: rgba(94,66,34,0.24);
+    --text: #2e2013;
+    --muted: #7a6248;
+    --teal: #3f8a76;
+    --gold: #b8862f;
+    --blue: #b1573c;
+    --font-serif: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    --font-display: "Fraunces", var(--font-serif);
+    --font-arabic: "Amiri", "Traditional Arabic", serif;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.hero {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    min-height: calc(100vh - 82px);
+    padding: 56px 20px 48px;
+}
+
+/* faint ambient glow -- barely there, warm like sunlight on paper rather
+   than a colored spotlight. Uses rgb() directly (CSS can't feed a hex
+   var into rgba() with a separate alpha) but at least now matches
+   --gold instead of a hardcoded value that could drift out of sync
+   with the palette again. */
+.hero::before {
+    content: "";
+    position: absolute;
+    width: 620px;
+    height: 620px;
+    top: 58%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, rgba(184,134,47,0.06), transparent 70%);
+    z-index: 0;
+    pointer-events: none;
+}
+
+.hero > * {
+    position: relative;
+    z-index: 1;
+}
+
+.eyebrow {
+    color: var(--gold);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    margin-bottom: 18px;
+}
+
+.hero h1 {
+    font-family: var(--font-display);
+    font-size: 48px;
+    font-weight: 500;
+    line-height: 1.16;
+    letter-spacing: -0.5px;
+    margin: 0;
+}
+
+.hero h1 .accent {
+    color: var(--gold);
+    font-weight: 600;
+    font-style: italic;
+}
+
+.hero p.lede {
+    font-family: var(--font-serif);
+    font-style: italic;
+    margin-top: 16px;
+    color: var(--muted);
+    font-size: 16px;
+    max-width: 520px;
+    line-height: 1.65;
+}
+
+.lede-arabic {
+    font-family: var(--font-arabic);
+    font-style: normal;
+    color: var(--text);
+    unicode-bidi: isolate;
+    font-size: 1.15em;
+}
+
+/* =========================
+   PARSE DEMO -- the hero animation
+   Walks through what the tool actually does: a real word splits into
+   its prefix/stem/suffix, each gets its own gloss, and the stem traces
+   back to its root -- the same structure the results page itself uses
+   (see result.html's symmetric suffix/stem/prefix layout), just as a
+   compact preview instead of the full page.
+========================= */
+
+.demo-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 30px;
+    padding: 6px 14px;
+    border: 1px solid rgba(63,138,118,0.35);
+    border-radius: 20px;
+    color: var(--teal);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    opacity: 0;
+    animation: rise-in .6s cubic-bezier(.2,.8,.3,1) 3s forwards;
+}
+.demo-tag .dot-ping {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--teal);
+    animation: ping 2.4s ease-in-out infinite;
+}
+@keyframes ping {
+    0%, 100% { opacity: .6; transform: scale(1); }
+    50%      { opacity: 1; transform: scale(1.15); }
+}
+
+.demo-wrap {
+    width: min(880px, 100%);
+    margin-top: 16px;
+}
+
+.demo-wrap svg {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.branch {
+    fill: none;
+    stroke: var(--line);
+    stroke-width: 1.2;
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    animation: draw-branch .7s ease-out forwards;
+}
+
+.branch.b-stem   { animation-delay: 1.05s; }
+.branch.b-suffix,
+.branch.b-prefix { animation-delay: 1.2s; }
+.branch.b-root   { animation-delay: 2.1s; animation-duration: .8s; }
+
+@keyframes draw-branch {
+    to { stroke-dashoffset: 0; }
+}
+
+.demo-seg, .demo-seg-label, .demo-card, .root-card {
+    opacity: 0;
+    transform-origin: center;
+    animation: rise-in .6s cubic-bezier(.2,.8,.3,1) forwards;
+}
+
+.demo-seg.prefix       { animation-delay: .05s; }
+.demo-seg.stem         { animation-delay: .25s; }
+.demo-seg.suffix       { animation-delay: .45s; }
+.demo-seg-label.prefix { animation-delay: .2s; }
+.demo-seg-label.stem   { animation-delay: .4s; }
+.demo-seg-label.suffix { animation-delay: .6s; }
+
+.demo-card.stem            { animation-delay: 1.55s; }
+.demo-card.suffix,
+.demo-card.prefix          { animation-delay: 1.7s; }
+
+.root-card { animation-delay: 2.6s; }
+
+@keyframes rise-in {
+    from { opacity: 0; transform: scale(.85) translateY(6px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.root-halo {
+    animation: pulse 4.5s ease-in-out 3.2s infinite;
+    transform-origin: center;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: .35; transform: scale(1); }
+    50%      { opacity: .55; transform: scale(1.04); }
+}
+
+.demo-word-group, .root-card { cursor: pointer; }
+.demo-word-group:hover .demo-seg-rect { stroke-opacity: .6; }
+.root-card:hover .root-card-rect { stroke-opacity: .6; }
+
+.root-dot {
+    animation: invite-pulse 2.6s ease-in-out 3.2s infinite;
+}
+@keyframes invite-pulse {
+    0%, 100% { r: 5; }
+    50%      { r: 6; }
+}
+
+.demo-seg-rect {
+    fill: var(--panel);
+    stroke-width: 1.3;
+    transition: stroke-opacity .15s ease;
+}
+.demo-seg.prefix .demo-seg-rect { stroke: var(--teal); }
+.demo-seg.stem   .demo-seg-rect { stroke: var(--border); }
+.demo-seg.suffix .demo-seg-rect { stroke: var(--blue); }
+
+.demo-seg-word {
+    font-family: var(--font-arabic);
+    font-size: 30px;
+    text-anchor: middle;
+}
+.demo-seg.prefix .demo-seg-word { fill: var(--teal); }
+.demo-seg.stem   .demo-seg-word { fill: var(--text); }
+.demo-seg.suffix .demo-seg-word { fill: var(--blue); }
+
+.demo-seg-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 1.6px;
+    text-anchor: middle;
+    text-transform: uppercase;
+}
+.demo-seg-label.prefix { fill: var(--teal); }
+.demo-seg-label.stem   { fill: var(--muted); }
+.demo-seg-label.suffix { fill: var(--blue); }
+
+.demo-card-rect {
+    fill: var(--panel);
+    stroke: var(--border);
+    stroke-width: 1;
+}
+.demo-card-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.4px;
+    text-anchor: middle;
+    text-transform: uppercase;
+    fill: var(--muted);
+}
+.demo-card-word {
+    font-family: var(--font-arabic);
+    font-size: 21px;
+    text-anchor: middle;
+    fill: var(--text);
+}
+.demo-card-gloss {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 11.5px;
+    text-anchor: middle;
+    fill: var(--muted);
+}
+
+.root-card-rect {
+    fill: var(--panel);
+    stroke: var(--border);
+    stroke-width: 1;
+    transition: stroke-opacity .15s ease;
+}
+.root-card-caption {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    fill: var(--teal);
+    text-anchor: middle;
+    text-transform: uppercase;
+}
+.root-card-word {
+    font-family: var(--font-arabic);
+    font-size: 34px;
+    font-weight: 700;
+    text-anchor: middle;
+    fill: var(--text);
+}
+.root-card-gloss {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 13px;
+    fill: var(--muted);
+    text-anchor: middle;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .branch { animation: none; stroke-dashoffset: 0; }
+    .demo-seg, .demo-seg-label, .demo-card, .root-card { animation: none; opacity: 1; transform: none; }
+    .root-halo { animation: none; opacity: .4; }
+    .root-dot { animation: none; }
+    .demo-tag { animation: none; opacity: 1; }
+    .demo-tag .dot-ping { animation: none; opacity: 1; }
+}
+
+/* The demo has only 4 nodes total (down from the old tree's 5 leaves +
+   root), so unlike that version it doesn't need anything hidden on
+   narrow screens -- the whole viewBox just scales down with the
+   container. */
+
+/* =========================
+   PROMPT + SEARCH BAR
+========================= */
+
+.hero-prompt {
+    margin-top: 40px;
+    color: var(--text);
+    font-size: 15px;
+    font-family: var(--font-serif);
+    font-style: italic;
+    letter-spacing: .2px;
+}
+
+.hero-search-wrap {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
+}
+
+.hero-search {
+    width: min(420px, 100%);
+    display: flex;
+    align-items: center;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    transition: border-color .2s ease;
+}
+
+.hero-search:focus-within {
+    border-bottom-color: var(--teal);
+}
+
+.hero-search input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    padding: 10px 4px;
+    font-size: 16px;
+    direction: rtl;
+    font-family: var(--font-arabic);
+}
+
+.hero-search input::placeholder {
+    color: var(--muted);
+    direction: rtl;
+}
+
+.hero-search button {
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 12px;
+    padding: 10px 4px 10px 10px;
+    cursor: pointer;
+    transition: color 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: inherit;
+}
+
+.hero-search button:hover {
+    color: var(--gold);
+}
+
+.hero-suggestions {
+    margin-top: 14px;
+    font-size: 12.5px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.hero-suggestions .chip {
+    font-family: var(--font-arabic);
+    background: none;
+    border: none;
+    color: var(--muted);
+    padding: 0;
+    font-size: 15px;
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 3px;
+    transition: color 0.15s ease, text-decoration-color 0.15s ease;
+}
+
+.hero-suggestions .chip:hover {
+    color: var(--teal);
+    text-decoration-color: var(--teal);
+}
+
+.hero-suggestions .chip-label {
+    font-family: system-ui, sans-serif;
+}
+
+/* =========================
+   FEATURE STRIP
+========================= */
+
+.hero-footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    margin-top: 50px;
+    flex-wrap: wrap;
+}
+
+.hero-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    max-width: 200px;
+}
+
+.hero-stat .number {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+}
+
+.hero-stat.root .number        { color: var(--teal); }
+.hero-stat.morphology .number  { color: var(--gold); }
+.hero-stat.occurrences .number { color: var(--blue); }
+
+.hero-stat .label {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.hero-divider {
+    width: 1px;
+    height: 26px;
+    background: var(--line);
+}
+
+@media (max-width: 640px) {
+    .hero { min-height: auto; padding: 64px 20px 56px; }
+    .hero h1 { font-size: 32px; }
+    .hero-footer { gap: 18px; }
+    .hero-divider { display: none; }
+    .demo-wrap { margin-top: 26px; }
+}
+
+/* =========================
+   LEARN THROUGH CONNECTIONS
+   A second beat after the hero making the point explicit: this isn't a
+   one-shot dictionary lookup, it's meant to be browsed -- one root pulls
+   in every word built on it, so vocabulary sticks by pattern rather than
+   by rote. Reuses the same root/word-card visual language as the hero
+   demo above (panel/border, --font-arabic, --teal/--gold accents) so it
+   reads as a continuation, not a bolted-on marketing block.
+========================= */
+
+.learn {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 20px 20px 90px;
+}
+
+.learn .eyebrow { margin-bottom: 18px; }
+
+.learn-title {
+    font-family: var(--font-display);
+    font-size: 34px;
+    font-weight: 500;
+    letter-spacing: -0.3px;
+    margin: 0 0 18px;
+}
+
+.learn-lede {
+    font-family: var(--font-serif);
+    color: var(--muted);
+    font-size: 15.5px;
+    line-height: 1.75;
+    max-width: 620px;
+    margin: 0 0 46px;
+}
+
+.learn-lede .lede-arabic { font-size: 1.1em; }
+
+.family-demo {
+    width: min(720px, 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.family-root {
+    background: var(--panel);
+    border: 1px solid rgba(184,134,47,.4);
+    border-radius: 16px;
+    padding: 16px 32px;
+    box-shadow: 0 10px 24px -18px rgba(94,66,34,.5);
+}
+
+.family-root-letters {
+    font-family: var(--font-arabic);
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: 6px;
+    color: var(--text);
+}
+
+.family-root-gloss {
+    font-family: system-ui, sans-serif;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-top: 6px;
+}
+
+.family-branch-line {
+    width: 1px;
+    height: 30px;
+    background: var(--line);
+    margin: 4px 0;
+}
+
+.family-words {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 14px;
+}
+
+.family-word {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 12px;
+    cursor: pointer;
+    transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.family-word:hover {
+    transform: translateY(-2px);
+    border-color: rgba(184,134,47,.4);
+    box-shadow: 0 12px 24px -18px rgba(94,66,34,.5);
+}
+
+.fw-ar {
+    font-family: var(--font-arabic);
+    font-size: 22px;
+    color: var(--text);
+}
+
+.fw-en {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-top: 6px;
+}
+
+.learn-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 40px;
+    color: var(--blue);
+    font-size: 13.5px;
+    font-weight: 600;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color .15s ease;
+}
+.learn-cta:hover { border-color: var(--blue); }
+
+@media (max-width: 640px) {
+    .learn { padding: 10px 20px 70px; }
+    .learn-title { font-size: 27px; }
+}
+
+/* =========================
+   VERSE FOOTER
+   Shared closing note with /roots -- same verse, same layout -- so the
+   two pages feel like one app rather than a hero page bolted to an
+   index of data.
+========================= */
+
+.verse-footer {
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 40px 20px 60px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+}
+
+.verse-footer .emblem {
+    flex: 0 0 auto;
+    opacity: 0.55;
+}
+
+.verse-footer .verse-text {
+    max-width: 640px;
+}
+
+.verse-footer .arabic {
+    color: var(--gold);
+    font-family: var(--font-arabic);
+    font-size: 20px;
+    line-height: 1.9;
+    direction: rtl;
+}
+
+.verse-footer .translation {
+    font-family: var(--font-serif);
+    margin-top: 10px;
+    font-size: 13px;
+    font-style: italic;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+@media (max-width: 800px) {
+    .verse-footer { flex-direction: column; padding-top: 30px; }
+}
+</style>
+
+{% macro emblem() %}
+<svg class="emblem" width="44" height="44" viewBox="0 0 44 44" fill="none">
+    <g stroke="var(--gold)" stroke-width="1">
+        <circle cx="22" cy="22" r="4"></circle>
+        <circle cx="22" cy="10" r="6"></circle>
+        <circle cx="22" cy="34" r="6"></circle>
+        <circle cx="10" cy="22" r="6"></circle>
+        <circle cx="34" cy="22" r="6"></circle>
+        <circle cx="13" cy="13" r="6"></circle>
+        <circle cx="31" cy="13" r="6"></circle>
+        <circle cx="13" cy="31" r="6"></circle>
+        <circle cx="31" cy="31" r="6"></circle>
+    </g>
+</svg>
+{% endmacro %}
+
+{% macro verse_footer() %}
+<div class="verse-footer">
+    {{ emblem() }}
+    <div class="verse-text">
+        <div class="arabic">كِتَابٌ أَنزَلْنَاهُ إِلَيْكَ مُبَارَكٌ لِّيَدَّبَّرُوا آيَاتِهِ وَلِيَتَذَكَّرَ أُولُو الْأَلْبَابِ</div>
+        <div class="translation">A blessed Book which We have revealed to you [O Muhammad] that they might reflect upon its verses and that those of understanding would be reminded. (Sad 38:29)</div>
+    </div>
+    {{ emblem() }}
+</div>
+{% endmacro %}
+
+<section class="hero">
+
+    <div class="eyebrow">A TOOL FOR LEARNING QUR'ANIC ARABIC</div>
+
+    <h1>Every word,<br>fully <span class="accent">unpacked</span>.</h1>
+
+    <p class="lede">
+        Watch <span class="lede-arabic" dir="rtl">وَٱلْمُؤْمِنِينَ</span> &mdash; "and the believers" &mdash;
+        split into its prefix, stem, and suffix, each with its own meaning, then trace
+        back to the three-letter root underneath it all.
+    </p>
+
+    <div class="demo-wrap">
+        <svg viewBox="0 0 1000 620" role="img" aria-label="Diagram parsing the Arabic word وَٱلْمُؤْمِنِينَ (and the believers) into its prefix وَٱلْ, stem مُؤْمِن, and suffix ينَ, each with an English gloss, then tracing the stem back to its root أمن meaning security or faith">
+
+            <!-- the word, split into its three morphemes. Positioned right
+                 to left (prefix on the right, suffix on the left) to match
+                 how the word itself reads -- not relying on DOM order or a
+                 dir attribute, since these are independently placed <text>
+                 elements rather than one flowing string. -->
+            <g class="demo-seg prefix demo-word-group" onclick="bayanSearch('وَٱلْمُؤْمِنِينَ')">
+                <rect class="demo-seg-rect" x="700" y="48" width="170" height="66" rx="14"></rect>
+                <text class="demo-seg-word" x="785" y="92" dir="rtl">وَٱلْ</text>
+            </g>
+            <g class="demo-seg stem demo-word-group" onclick="bayanSearch('وَٱلْمُؤْمِنِينَ')">
+                <rect class="demo-seg-rect" x="405" y="48" width="190" height="66" rx="14"></rect>
+                <text class="demo-seg-word" x="500" y="92" dir="rtl">مُؤْمِن</text>
+            </g>
+            <g class="demo-seg suffix demo-word-group" onclick="bayanSearch('وَٱلْمُؤْمِنِينَ')">
+                <rect class="demo-seg-rect" x="130" y="48" width="170" height="66" rx="14"></rect>
+                <text class="demo-seg-word" x="215" y="92" dir="rtl">ينَ</text>
+            </g>
+
+            <text class="demo-seg-label prefix" x="785" y="134">Prefix</text>
+            <text class="demo-seg-label stem"   x="500" y="134">Stem</text>
+            <text class="demo-seg-label suffix" x="215" y="134">Suffix</text>
+
+            <!-- fan of arrows from the word down to each morpheme's card,
+                 the stem arrow always dead-center regardless of the sides
+                 (see result.html's own hero fan for why) -->
+            <path class="branch b-prefix" d="M500,166 C 620,190 720,210 785,228"></path>
+            <path class="branch b-stem"   d="M500,166 L500,228"></path>
+            <path class="branch b-suffix" d="M500,166 C 380,190 280,210 215,228"></path>
+
+            <!-- prefix card -->
+            <g class="demo-card prefix">
+                <rect class="demo-card-rect" x="685" y="228" width="200" height="98" rx="12"></rect>
+                <text class="demo-card-label" x="785" y="253">Prefix</text>
+                <text class="demo-card-word"  x="785" y="286" dir="rtl">وَ + ٱلْ</text>
+                <text class="demo-card-gloss" x="785" y="308">"and" + "the"</text>
+            </g>
+
+            <!-- stem / meaning card -->
+            <g class="demo-card stem">
+                <rect class="demo-card-rect" x="400" y="228" width="200" height="98" rx="12"></rect>
+                <text class="demo-card-label" x="500" y="253">Stem meaning</text>
+                <text class="demo-card-word"  x="500" y="286" dir="rtl">مُؤْمِن</text>
+                <text class="demo-card-gloss" x="500" y="308">believer</text>
+            </g>
+
+            <!-- suffix card -->
+            <g class="demo-card suffix">
+                <rect class="demo-card-rect" x="115" y="228" width="200" height="98" rx="12"></rect>
+                <text class="demo-card-label" x="215" y="253">Suffix</text>
+                <text class="demo-card-word"  x="215" y="286" dir="rtl">ينَ</text>
+                <text class="demo-card-gloss" x="215" y="308">plural marker</text>
+            </g>
+
+            <!-- the stem's own root, branching straight down from dead
+                 center -- always aligned under the stem card regardless
+                 of what's on either side of it -->
+            <path class="branch b-root" d="M500,326 L500,412"></path>
+
+            <g class="root-card" onclick="bayanSearch('أمن')">
+                <rect class="root-halo" x="370" y="402" width="260" height="180" rx="20" fill="var(--teal)" fill-opacity="0.08"></rect>
+                <rect class="root-card-rect" x="390" y="412" width="220" height="160" rx="16"></rect>
+                <circle class="root-dot" cx="580" cy="428" r="5" fill="var(--gold)"></circle>
+                <text class="root-card-caption" x="500" y="450">Root</text>
+                <text class="root-card-word" x="500" y="500" dir="rtl">أمن</text>
+                <text class="root-card-gloss" x="500" y="530">security, trust, faith</text>
+            </g>
+        </svg>
+    </div>
+
+    <div class="demo-tag">
+        <span class="dot-ping"></span>
+        Tap the word or root above to try it live
+    </div>
+
+    <div class="hero-prompt">Now try it with a word of your own.</div>
+
+    <div class="hero-search-wrap" id="search">
+        <form action="/search" method="GET" class="hero-search" autocomplete="off">
+            <input
+                id="search-input"
+                type="text"
+                name="q"
+                placeholder="الصَّبْر">
+
+            <button type="submit">
+                Explore
+                <svg width="13" height="13" viewBox="0 0 20 20" fill="none">
+                    <path d="M4 10h11M10 4l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+            </button>
+        </form>
+    </div>
+
+    <div class="hero-suggestions">
+        <span class="chip-label">Try</span>
+        <button type="button" class="chip" onclick="bayanSearch(this.textContent)">ٱلرَّحْمَٰن</button>
+        <button type="button" class="chip" onclick="bayanSearch(this.textContent)">الْحَقّ</button>
+        <button type="button" class="chip" onclick="bayanSearch(this.textContent)">جَنَّة</button>
+    </div>
+
+    <div class="hero-footer">
+
+        <div class="hero-stat root">
+            <span class="number">Roots</span>
+            <span class="label">Every word traced to its three-letter core</span>
+        </div>
+
+        <div class="hero-divider"></div>
+
+        <div class="hero-stat morphology">
+            <span class="number">Morphology</span>
+            <span class="label">Prefixes, suffixes, and every conjugation, mapped</span>
+        </div>
+
+        <div class="hero-divider"></div>
+
+        <div class="hero-stat occurrences">
+            <span class="number">Occurrences</span>
+            <span class="label">Every verse the word appears in, cross-referenced</span>
+        </div>
+
+    </div>
+
+</section>
+
+<section class="learn">
+
+    <div class="eyebrow">MORE THAN A DICTIONARY</div>
+    <h2 class="learn-title">Learn Arabic by making connections</h2>
+
+    <p class="learn-lede">
+        Look up one word and you don't just get a definition &mdash; you get its whole family.
+        Every occurrence traces back to the same three-letter root, so patterns start to jump
+        out on their own: <span class="lede-arabic" dir="rtl">مُؤْمِن</span> "believer" and
+        <span class="lede-arabic" dir="rtl">إِيمَان</span> "faith" share the same root as
+        <span class="lede-arabic" dir="rtl">أَمَانَة</span> "trust." Once you've noticed one
+        connection like that, you start noticing them everywhere in the text.
+    </p>
+
+    <div class="family-demo">
+        <div class="family-root">
+            <div class="family-root-letters" dir="rtl">أ م ن</div>
+            <div class="family-root-gloss">security &middot; trust &middot; faith</div>
+        </div>
+        <div class="family-branch-line"></div>
+        <div class="family-words">
+            <div class="family-word" onclick="bayanSearch('مُؤْمِن')" role="link" tabindex="0" aria-label="Search مُؤْمِن">
+                <div class="fw-ar" dir="rtl">مُؤْمِن</div>
+                <div class="fw-en">believer</div>
+            </div>
+            <div class="family-word" onclick="bayanSearch('إِيمَان')" role="link" tabindex="0" aria-label="Search إِيمَان">
+                <div class="fw-ar" dir="rtl">إِيمَان</div>
+                <div class="fw-en">faith</div>
+            </div>
+            <div class="family-word" onclick="bayanSearch('أَمَانَة')" role="link" tabindex="0" aria-label="Search أَمَانَة">
+                <div class="fw-ar" dir="rtl">أَمَانَة</div>
+                <div class="fw-en">trust, safekeeping</div>
+            </div>
+            <div class="family-word" onclick="bayanSearch('أَمِين')" role="link" tabindex="0" aria-label="Search أَمِين">
+                <div class="fw-ar" dir="rtl">أَمِين</div>
+                <div class="fw-en">trustworthy</div>
+            </div>
+        </div>
+    </div>
+
+    <a href="/roots" class="learn-cta">
+        Browse every root in the Qur'an
+        <svg width="11" height="11" viewBox="0 0 20 20" fill="none">
+            <path d="M4 10h11M10 4l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+    </a>
+
+</section>
+
+{{ verse_footer() }}
+
+<script>
+function bayanSearch(word) {
+    window.location.href = '/search?q=' + encodeURIComponent(word.trim());
+}
+
+document.querySelectorAll('.family-word').forEach(function (card) {
+    card.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            card.click();
+        }
+    });
+});
+</script>
+
+{% endblock %}

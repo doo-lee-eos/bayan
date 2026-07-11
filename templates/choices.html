@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Bayan — choose a word{% endblock %}
+
+{% block content %}
+
+<style>
+:root {
+    --bg: #070b12;
+    --panel: rgba(255,255,255,0.03);
+    --border: rgba(255,255,255,0.08);
+    --text: #eaf0ff;
+    --muted: #8a96ab;
+    --teal: #4fd1c5;
+    --gold: #e0ab52;
+    --blue: #5b9bd5;
+    --font-serif: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.choices-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 60px 20px 80px;
+    text-align: center;
+}
+
+.choices-eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--gold);
+    margin-bottom: 14px;
+}
+
+.choices-title {
+    font-size: 28px;
+    font-weight: 600;
+}
+
+.choices-title .query {
+    color: var(--gold);
+    direction: rtl;
+    unicode-bidi: isolate;
+}
+
+.choices-sub {
+    font-family: var(--font-serif);
+    font-style: italic;
+    color: var(--muted);
+    font-size: 15px;
+    margin-top: 10px;
+    max-width: 560px;
+}
+
+.choices-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+    width: 100%;
+    max-width: 900px;
+    margin-top: 40px;
+}
+
+.choice-card {
+    display: block;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 18px;
+    text-align: center;
+    text-decoration: none;
+    color: var(--text);
+    transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.choice-card:hover {
+    border-color: var(--teal);
+    transform: translateY(-2px);
+}
+
+.choice-card .arabic {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.choice-card .root {
+    margin-top: 10px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--teal);
+}
+
+.choice-card .meaning {
+    margin-top: 6px;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+.choices-empty {
+    margin-top: 40px;
+    color: var(--muted);
+    font-size: 15px;
+}
+</style>
+
+<div class="choices-page">
+
+    <div class="choices-eyebrow">
+        {% if found.type == 'disambiguation' %}MULTIPLE WORDS FOUND
+        {% elif found.type == 'root_family' %}ROOT FAMILY
+        {% else %}DID YOU MEAN
+        {% endif %}
+    </div>
+
+    <div class="choices-title">
+        {% if found.type == 'disambiguation' %}
+        “<span class="query">{{ query }}</span>” matches more than one word
+        {% elif found.type == 'root_family' %}
+        No exact match for “<span class="query">{{ query }}</span>”
+        {% else %}
+        No exact match for “<span class="query">{{ query }}</span>”
+        {% endif %}
+    </div>
+
+    <div class="choices-sub">
+        {% if found.type == 'disambiguation' %}
+        These share the same spelling once diacritics are removed — which one did you mean?
+        {% elif found.type == 'root_family' %}
+        But its root <strong>{{ found.root }}</strong> appears throughout the Qur'an. Here's every word built from it.
+        {% else %}
+        Here's the closest matches from the Qur'anic corpus.
+        {% endif %}
+    </div>
+
+    {% if found.candidates %}
+    <div class="choices-grid">
+        {% for c in found.candidates %}
+        <a class="choice-card" href="{{ url_for('search', q=c.original) }}">
+            <div class="arabic">{{ c.original }}</div>
+            {% if c.root %}<div class="root">{{ c.root }}</div>{% endif %}
+            {% if c.meaning %}<div class="meaning">{{ c.meaning }}</div>{% endif %}
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="choices-empty">No candidates to show.</div>
+    {% endif %}
+
+</div>
+
+{% endblock %}

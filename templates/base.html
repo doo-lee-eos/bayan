@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}Bayan{% endblock %}</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap" rel="stylesheet">
+
+    <style>
+        .brand-mark svg { display: block; }
+        .brand-mark { display: flex; align-items: center; justify-content: center; }
+        .brand-title { font-family: var(--font-display); }
+    </style>
+
+    {% block css %}{% endblock %}
+
+</head>
+
+<body>
+
+<header class="site-header">
+
+    <div class="header-inner">
+
+        <a href="/" class="brand">
+
+            <div class="brand-mark">
+                <svg width="26" height="26" viewBox="0 0 44 44" fill="none">
+                    <g stroke="#b8862f" stroke-width="1.4">
+                        <circle cx="22" cy="22" r="4"></circle>
+                        <circle cx="22" cy="10" r="6"></circle>
+                        <circle cx="22" cy="34" r="6"></circle>
+                        <circle cx="10" cy="22" r="6"></circle>
+                        <circle cx="34" cy="22" r="6"></circle>
+                        <circle cx="13" cy="13" r="6"></circle>
+                        <circle cx="31" cy="13" r="6"></circle>
+                        <circle cx="13" cy="31" r="6"></circle>
+                        <circle cx="31" cy="31" r="6"></circle>
+                    </g>
+                </svg>
+            </div>
+
+            <div class="brand-text">
+
+                <div class="brand-title">
+                    BAYAN
+                </div>
+
+                <div class="brand-subtitle">
+                    QUR'ANIC WORD EXPLORER
+                </div>
+
+            </div>
+
+        </a>
+
+        <nav class="main-nav">
+
+            <a href="/#search">Search</a>
+
+            <a href="/roots">Roots</a>
+
+
+            <a href="/about">About</a>
+
+        </nav>
+
+    </div>
+
+</header>
+
+<main>
+
+{% block content %}
+{% endblock %}
+
+</main>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+</body>
+</html>

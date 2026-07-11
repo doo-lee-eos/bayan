@@ -1,0 +1,1274 @@
+{% extends "base.html" %}
+
+{% block content %}
+{# Header / nav are assumed to live in base.html. The search bar below is embedded directly in this page. #}
+
+<style>
+:root {
+    /* Warm parchment / desert palette, matching the home page's hero. */
+    --bg: #f6ecd8;
+    --panel: rgba(94,66,34,0.045);
+    --border: rgba(94,66,34,0.16);
+    --line: rgba(94,66,34,0.24);
+    --text: #2e2013;
+    --muted: #7a6248;
+    --teal: #3f8a76;
+    --gold: #b8862f;
+    --blue: #b1573c;
+    --font-serif: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    --font-arabic: "Amiri", "Traditional Arabic", serif;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.bayan {
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:20px 20px 40px;
+    text-align: center;
+}
+.result-search{
+    width:100%;
+    display:flex;
+    justify-content:center;
+    margin-bottom:70px;
+}
+
+.hero-search{
+    width:min(720px,100%);
+    display:flex;
+    align-items:center;
+    gap:4px;
+    background:linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,255,255,.15));
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:6px 6px 6px 8px;
+    backdrop-filter:blur(20px);
+    box-shadow:0 1px 0 rgba(255,255,255,.6) inset, 0 24px 48px -28px rgba(94,66,34,.4);
+    transition:border-color .25s ease, box-shadow .25s ease;
+}
+
+.hero-search:focus-within{
+    border-color:rgba(184,134,47,.45);
+    box-shadow:0 0 0 3px rgba(184,134,47,.14), 0 24px 48px -28px rgba(94,66,34,.4);
+}
+
+.hero-search input{
+    flex:1;
+    min-width:0;
+    background:none;
+    border:none;
+    outline:none;
+    color:var(--text);
+    padding:16px 14px;
+    font-family:var(--font-serif);
+    font-style:italic;
+    font-size:17px;
+    letter-spacing:.2px;
+}
+
+.hero-search input::placeholder{
+    color:var(--muted);
+    opacity:.85;
+}
+
+.hero-search button{
+    flex:0 0 auto;
+    width:46px;
+    height:46px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:none;
+    border-radius:50%;
+    background:linear-gradient(155deg, var(--gold), #8a651f);
+    color:#fbf3e2;
+    cursor:pointer;
+    box-shadow:0 6px 16px -6px rgba(184,134,47,.55);
+    transition:transform .18s ease, box-shadow .18s ease, filter .18s ease;
+}
+
+.hero-search button svg{
+    width:17px;
+    height:17px;
+    stroke:currentColor;
+}
+
+.hero-search button:hover{
+    transform:scale(1.06);
+    filter:brightness(1.08);
+    box-shadow:0 8px 20px -6px rgba(184,134,47,.7);
+}
+
+.hero-search button:active{
+    transform:scale(.94);
+}
+/* =========================
+   HERO / MORPHEME SPLIT
+========================= */
+
+.eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--gold);
+    margin-bottom: 30px;
+}
+
+.word-row {
+    display: flex;
+    direction: rtl;
+    align-items: flex-end;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.segment {
+    padding: 0 26px 12px;
+    font-family: var(--font-arabic);
+    font-size: 68px;
+    font-weight: 700;
+    line-height: 1.5;
+    position: relative;
+    border-bottom: 1px dotted var(--seg-color, var(--line));
+}
+
+.segment + .segment::before {
+    content: "";
+    position: absolute;
+    top: -6px;
+    left: 0;
+    bottom: 10px;
+    border-left: 1px dotted var(--line);
+}
+
+.segment.suffix { --seg-color: var(--gold); color: var(--gold); }
+.segment.main   { --seg-color: rgba(94,66,34,0.3); color: var(--text); }
+.segment.prefix { --seg-color: var(--teal); color: var(--teal); }
+
+.label-row {
+    display: flex;
+    direction: rtl;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 14px;
+}
+
+.seg-label {
+    padding: 0 26px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+}
+
+.seg-label.suffix { color: var(--gold); }
+.seg-label.main   { color: var(--text); }
+.seg-label.prefix { color: var(--teal); }
+
+/* connector fan */
+.connector {
+    width: 100%;
+    max-width: 900px;
+    height: 90px;
+    margin-top: 4px;
+}
+.connector svg { display: block; }
+
+/* =========================
+   CARD ROW (ROOT / MEANING / OCCURRENCES)
+========================= */
+
+.cards-row {
+    display: flex;
+    justify-content: center;
+    gap: 44px;
+    flex-wrap: wrap;
+    width: 100%;
+    max-width: 940px;
+}
+
+/* =========================
+   MEANING CLUSTER
+   (prefix/meaning/suffix flank the stem on top; root branches
+   straight down from it below, like a small family tree)
+========================= */
+
+.meaning-cluster {
+    width: 100%;
+    max-width: 940px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* A plain centered flex row: only the slots that actually exist are
+   rendered (no empty grid columns forcing a fixed 3-way split), so a
+   lone stem, a stem+one-affix pair, or the full stem+prefix+suffix trio
+   all end up centered as a tight group instead of spread across the
+   full row width. The root card lives inside .stem-column below, so it
+   always tracks directly under the stem card no matter which side
+   cards are present. */
+.meaning-row {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 28px;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.stem-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+@media (max-width: 800px) {
+    .meaning-row { flex-direction: column; align-items: center; }
+}
+
+.card.meaning {
+    border-color: rgba(224, 171, 82, 0.22);
+}
+
+.branch {
+    width: 0;
+    height: 34px;
+    border-left: 1px dashed var(--line);
+    margin-top: 4px;
+    position: relative;
+}
+.branch::before {
+    content: "";
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--line);
+}
+.branch::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: -4px;
+    width: 7px;
+    height: 7px;
+    border-right: 1px dashed var(--line);
+    border-bottom: 1px dashed var(--line);
+    transform: rotate(45deg);
+}
+
+.detail-row {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    gap: 28px;
+    flex-wrap: wrap;
+    width: 100%;
+    margin-top: 2px;
+}
+
+.card {
+    flex: 1;
+    min-width: 220px;
+    max-width: 280px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px 20px 26px;
+}
+
+.card .label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--teal);
+    margin-bottom: 14px;
+}
+.card.meaning .label { color: var(--gold); }
+.card.occ .label { color: var(--blue); }
+
+.card .root-letters {
+    font-family: var(--font-arabic);
+    font-size: 30px;
+    letter-spacing: 6px;
+}
+
+.card .divider {
+    width: 44px;
+    height: 1px;
+    background: var(--border);
+    margin: 14px auto;
+}
+
+.card .caption {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 6px;
+}
+
+.card.affix .affix-letter {
+    unicode-bidi: isolate;
+    direction: rtl;
+    font-family: var(--font-arabic);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin-inline-end: 8px;
+}
+
+.card.affix .affix-grammar {
+    unicode-bidi: isolate;
+    direction: ltr;
+}
+
+.card .meaning-desc {
+    font-family: var(--font-serif);
+    font-size: 17px;
+    font-style: italic;
+    line-height: 1.6;
+    color: var(--text);
+}
+
+.card .meaning-desc.small {
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.card .big-number {
+    font-size: 36px;
+    font-weight: 700;
+}
+
+.card .small-caps {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    margin-top: 4px;
+}
+
+.card a.view-all {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--blue);
+    text-decoration: none;
+}
+.card a.view-all:hover { text-decoration: underline; }
+
+.card .full-definition {
+    margin-top: 12px;
+}
+.card .full-definition summary {
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--teal);
+    letter-spacing: .3px;
+    list-style: none;
+}
+.card .full-definition summary::-webkit-details-marker { display: none; }
+.card .full-definition summary::before {
+    content: "+ ";
+}
+.card .full-definition[open] summary::before {
+    content: "− ";
+}
+.card .full-definition summary:hover { text-decoration: underline; }
+.card .full-definition .meaning-desc {
+    max-height: 260px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+/* =========================
+   OCCURRENCES PANEL
+========================= */
+
+.corpus {
+    width: 100%;
+    max-width: 940px;
+    margin-top: 56px;
+    text-align: left;
+}
+
+.corpus-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.corpus-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--blue);
+}
+
+.corpus-count {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.3px;
+}
+.corpus-count strong {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0;
+}
+
+/* =========================
+   WORD FAMILY (distinct lemmas sharing the root)
+========================= */
+
+.family-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 14px;
+}
+
+.family-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    /* now an <a> (links to /word/<lemma>), not a plain div -- reset the
+       default anchor look so it still reads as a card, not a hyperlink */
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+
+.family-card .lemma {
+    font-family: var(--font-arabic);
+    font-size: 26px;
+    direction: rtl;
+    text-align: right;
+    color: var(--text);
+}
+
+.family-card .meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-top: 6px;
+}
+
+.family-card .pos {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    color: var(--muted);
+    text-transform: uppercase;
+}
+
+.family-card .gloss {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--muted);
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+}
+
+.occurrence {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 16px 18px;
+    margin-bottom: 10px;
+    border-radius: 12px;
+    /* now an <a> (links to /word/<surface> for that occurrence), not a
+       plain div -- reset the default anchor look so it still reads as a
+       row, not a hyperlink */
+    text-decoration: none;
+    color: inherit;
+}
+
+.occurrence .ref { flex: 0 0 170px; }
+.occurrence .surah { font-size: 15px; font-weight: 600; }
+
+.occurrence .occurrence-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.occurrence .arabic-line {
+    text-align: right;
+    font-family: var(--font-arabic);
+    font-size: 19px;
+    line-height: 1.8;
+    direction: rtl;
+}
+.occurrence .arabic-line .hl { color: var(--teal); }
+
+.occurrence .translation {
+    text-align: left;
+    direction: ltr;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--muted);
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+}
+
+.occurrence .chevron { color: var(--muted); font-size: 16px; }
+
+.root-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+
+.occurrence-list-wrap {
+    position: relative;
+}
+
+/* no-JS fallback: only the first 10 occurrences show if the script hasn't run */
+.occurrence-list .occurrence:nth-child(n+11) { display: none; }
+
+.fade-overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 120px;
+    background: linear-gradient(to bottom, transparent, var(--bg) 88%);
+    pointer-events: none;
+}
+
+.show-more-wrap {
+    display: flex;
+    justify-content: center;
+    margin-top: 6px;
+}
+
+.show-more-btn {
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: var(--teal);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 10px 26px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.show-more-btn:hover {
+    border-color: var(--teal);
+}
+
+/* =========================
+   BOTTOM STAT STRIP
+========================= */
+
+.strip {
+    width: 100%;
+    max-width: 1000px;
+    margin-top: 50px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    border-top: 1px solid var(--border);
+    padding-top: 26px;
+}
+
+.strip .stat { flex: 1 1 140px; max-width: 170px; text-align: center; padding: 0 8px; }
+
+.strip .stat .label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    color: var(--muted);
+    margin-bottom: 10px;
+}
+.strip .stat.prefix .label { color: var(--teal); }
+.strip .stat.suffix .label { color: var(--gold); }
+.strip .stat.pattern .label { color: var(--blue); }
+
+.strip .stat .value { font-size: 17px; margin-bottom: 6px; }
+.strip .stat .desc { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
+/* =========================
+   ROOT-FAMILY / NOT-FOUND VIEWS
+========================= */
+
+.root-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 40px;
+}
+
+.root-hero .root-letters {
+    font-family: var(--font-arabic);
+    font-size: 56px;
+    font-weight: 700;
+    letter-spacing: 10px;
+    color: var(--teal);
+}
+
+.root-hero .note {
+    font-family: var(--font-serif);
+    font-style: italic;
+    color: var(--muted);
+    font-size: 15px;
+    margin-top: 14px;
+    max-width: 520px;
+}
+
+.not-found {
+    padding: 80px 20px;
+    color: var(--muted);
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 17px;
+}
+
+/* =========================
+   VERSE FOOTER
+========================= */
+
+.verse-footer {
+    width: 100%;
+    max-width: 1000px;
+    margin-top: 50px;
+    padding-top: 30px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+}
+
+.verse-footer .emblem {
+    flex: 0 0 auto;
+    opacity: 0.55;
+}
+
+.verse-footer .verse-text {
+    max-width: 640px;
+}
+
+.verse-footer .arabic {
+    color: var(--gold);
+    font-family: var(--font-arabic);
+    font-size: 20px;
+    line-height: 1.9;
+    direction: rtl;
+}
+
+.verse-footer .translation {
+    font-family: var(--font-serif);
+    margin-top: 10px;
+    font-size: 13px;
+    font-style: italic;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+@media (max-width: 800px) {
+    .segment { font-size: 42px; padding: 0 14px 10px; }
+    .seg-label { padding: 0 14px; }
+    .connector { display: none; }
+    .strip { row-gap: 24px; }
+    .verse-footer { flex-direction: column; }
+}
+</style>
+
+{% macro emblem() %}
+<svg class="emblem" width="44" height="44" viewBox="0 0 44 44" fill="none">
+    <g stroke="var(--gold)" stroke-width="1">
+        <circle cx="22" cy="22" r="4"></circle>
+        <circle cx="22" cy="10" r="6"></circle>
+        <circle cx="22" cy="34" r="6"></circle>
+        <circle cx="10" cy="22" r="6"></circle>
+        <circle cx="34" cy="22" r="6"></circle>
+        <circle cx="13" cy="13" r="6"></circle>
+        <circle cx="31" cy="13" r="6"></circle>
+        <circle cx="13" cy="31" r="6"></circle>
+        <circle cx="31" cy="31" r="6"></circle>
+    </g>
+</svg>
+{% endmacro %}
+
+{% macro verse_footer() %}
+<div class="verse-footer">
+    {{ emblem() }}
+    <div class="verse-text">
+        <div class="arabic">كِتَابٌ أَنزَلْنَاهُ إِلَيْكَ مُبَارَكٌ لِّيَدَّبَّرُوا آيَاتِهِ وَلِيَتَذَكَّرَ أُولُو الْأَلْبَابِ</div>
+        <div class="translation">A blessed Book which We have revealed to you [O Muhammad] that they might reflect upon its verses and that those of understanding would be reminded. (Sad 38:29)</div>
+    </div>
+    {{ emblem() }}
+</div>
+{% endmacro %}
+
+{# Diacritic/hamza-insensitive normalize, used to highlight the matched word
+   inside each verse. Every occurrence row already carries its OWN `surface`
+   (the exact inflected form matched at that occurrence) — highlighting
+   against that per-row value is both simpler and more accurate than trying
+   to reuse one shared "stem" across every occurrence, since the surface
+   spelling legitimately varies occurrence to occurrence (case endings,
+   attached clitics, etc). #}
+{% set diacritics = ['\u064B','\u064C','\u064D','\u064E','\u064F','\u0650','\u0651','\u0652','\u0653','\u0654','\u0655','\u0656',
+                      '\u06D6','\u06D7','\u06D8','\u06D9','\u06DA','\u06DB','\u06DC','\u06DF','\u06E0','\u06E1','\u06E2','\u06E3',
+                      '\u06E4','\u06E7','\u06E8','\u06E9','\u06EA','\u06EB','\u06EC','\u06ED'] %}
+{% set normalize_pairs = [('\u0623','\u0627'),('\u0625','\u0627'),('\u0622','\u0627'),('\u0671','\u0627'),('\u0670','\u0627'),('\u0629','\u0647'),('\u0649','\u064A'),('\u0640','\u0621')] %}
+{% macro normalize(text) -%}
+    {%- set ns = namespace(t = text or "") -%}
+    {# silent connective waw before ة, e.g. الصلاة/الزكاة: و + dagger-alif + ة -> dagger-alif + ة #}
+    {%- set ns.t = ns.t.replace('\u0648\u0670\u0629', '\u0670\u0629') -%}
+    {# strip plain diacritics + Uthmani-only annotation marks (never present in plain verse text) #}
+    {%- for d in diacritics -%}{%- set ns.t = ns.t.replace(d, '') -%}{%- endfor -%}
+    {# small waw/yeh are dual-role: a silent pronoun-elision mark when they end the word
+       (drop them), but a genuine letter when something follows (fold to full form) #}
+    {%- if ns.t.endswith('\u06E5') -%}
+        {%- set ns.t = ns.t[:-1] -%}
+    {%- else -%}
+        {%- set ns.t = ns.t.replace('\u06E5', '\u0648') -%}
+    {%- endif -%}
+    {%- if ns.t.endswith('\u06E6') -%}
+        {%- set ns.t = ns.t[:-1] -%}
+    {%- else -%}
+        {%- set ns.t = ns.t.replace('\u06E6', '\u064A') -%}
+    {%- endif -%}
+    {# decomposed hamza+alif (e.g. ءَامَنَّا) collapses at word-start, and also
+       one letter in when a hamza-initial STEM is stuck right after a
+       hamza-initial PREFIX (e.g. اَ + ءِنَّ -> اَءِنَّا, "are we..?") --
+       but nowhere else, so it doesn't eat the medial/final root hamza in
+       words like شَيْئًا #}
+    {%- set ns.p = -1 -%}
+    {%- if ns.t.startswith('\u0621') -%}
+        {%- set ns.p = 0 -%}
+    {%- elif ns.t[:1] in ['\u0623','\u0625','\u0622','\u0671'] and ns.t[1:2] == '\u0621' -%}
+        {%- set ns.p = 1 -%}
+    {%- endif -%}
+    {%- if ns.p == 0 -%}
+        {%- if ns.t[1:2] == '\u0627' -%}
+            {%- set ns.t = ns.t[1:] -%}
+        {%- else -%}
+            {%- set ns.t = '\u0627' + ns.t[1:] -%}
+        {%- endif -%}
+    {%- elif ns.p == 1 -%}
+        {%- if ns.t[2:3] == '\u0627' -%}
+            {%- set ns.t = ns.t[:1] + ns.t[2:] -%}
+        {%- else -%}
+            {%- set ns.t = ns.t[:1] + '\u0627' + ns.t[2:] -%}
+        {%- endif -%}
+    {%- endif -%}
+    {%- for a, b in normalize_pairs -%}{%- set ns.t = ns.t.replace(a, b) -%}{%- endfor -%}
+    {{- ns.t -}}
+{%- endmacro %}
+
+{% macro word_family_grid(word_family) %}
+{# One card per distinct lemma sharing the root (search.fetch_word_family_by_root),
+   each with its part of speech and its own gloss -- distinct from
+   occurrence_list below, which is one row per AYAH rather than one card
+   per derived FORM. #}
+{% set pos_labels = {"N": "Noun", "V": "Verb"} %}
+<div class="family-grid">
+{% for entry in word_family %}
+    {% if entry.meaning %}
+    <a class="family-card" href="{{ url_for('search', q=entry.lemma) }}">
+        <div class="lemma">{{ entry.lemma }}</div>
+        <div class="meta">
+            <span class="pos">{{ pos_labels.get(entry.pos, entry.pos) or "—" }}</span>
+        </div>
+        <div class="gloss">{{ entry.meaning }}</div>
+    </a>
+    {% endif %}
+{% endfor %}
+</div>
+{% endmacro %}
+
+{% macro occurrence_list(occurrences) %}
+{# Same ayah can contain more than one match for a root (e.g. 51:1 has
+   both وَالذَّارِيَاتِ and ذَرْوًا). Occurrences arrive pre-sorted by
+   surah/ayah, so those show up as consecutive entries -- collapse each
+   run of same surah+ayah entries into a single row and highlight every
+   matched surface within it, instead of repeating the whole ayah once
+   per match. #}
+{% set groups = namespace(list=[]) %}
+{% for o in occurrences %}
+    {% if groups.list and groups.list[-1][0].surah == o.surah and groups.list[-1][0].ayah == o.ayah %}
+        {% set _ = groups.list[-1].append(o) %}
+    {% else %}
+        {% set _ = groups.list.append([o]) %}
+    {% endif %}
+{% endfor %}
+<div class="occurrence-list-wrap">
+    <div class="occurrence-list" id="occurrenceList">
+    {% for group in groups.list %}
+    <a class="occurrence" data-idx="{{ loop.index0 }}" href="{{ url_for('search', q=group[0].surface) }}">
+        <div class="ref">
+            <div class="surah">{{ group[0].surah }} : {{ group[0].ayah }}</div>
+        </div>
+        <div class="occurrence-body">
+            <div class="arabic-line">
+                {% set targets = [] %}
+                {% for g in group %}{% if g.surface %}{% set _ = targets.append(normalize(g.surface)) %}{% endif %}{% endfor %}
+                {%- for w in group[0].text.split(' ') -%}
+                    {%- set nw = normalize(w) -%}
+                    {%- set ms = namespace(hit=false) -%}
+                    {%- for t in targets -%}
+                        {%- if nw.find(t) != -1 -%}{%- set ms.hit = true -%}{%- endif -%}
+                    {%- endfor -%}
+                    {%- if ms.hit -%}
+                    <span class="hl">{{ w }}</span>
+                    {%- else -%}
+                    {{ w }}
+                    {%- endif -%}
+                    {{ ' ' if not loop.last else '' }}
+                {%- endfor -%}
+            </div>
+            {% set trans = namespace(v=none) %}
+            {% for g in group %}{% if g.translation and not trans.v %}{% set trans.v = g.translation %}{% endif %}{% endfor %}
+            {% if trans.v %}
+            <div class="translation">{{ trans.v }}</div>
+            {% endif %}
+        </div>
+        <div class="chevron">&rsaquo;</div>
+    </a>
+    {% endfor %}
+    </div>
+    {% if occurrences|length > 10 %}
+    <div class="fade-overlay" id="occurrenceFade"></div>
+    {% endif %}
+</div>
+
+{% if occurrences|length > 10 %}
+<div class="show-more-wrap">
+    <button
+        type="button"
+        class="show-more-btn"
+        id="occurrenceShowMoreBtn"
+        data-shown="10"
+        onclick="
+            var scope = this.closest('.corpus');
+            var items = scope.querySelectorAll('.occurrence');
+            var shown = parseInt(this.dataset.shown, 10) + 10;
+            items.forEach(function (el, i) { el.style.display = i < shown ? 'flex' : 'none'; });
+            this.dataset.shown = shown;
+            var fade = scope.querySelector('.fade-overlay');
+            if (shown >= items.length) {
+                this.style.display = 'none';
+                if (fade) { fade.style.display = 'none'; }
+            } else {
+                this.textContent = 'Show ' + Math.min(10, items.length - shown) + ' More';
+            }
+        "
+    >Show More</button>
+</div>
+{% endif %}
+{% endmacro %}
+
+<div class="bayan">
+<div class="result-search">
+    <form action="/search" method="GET" class="hero-search">
+        <input
+            type="text"
+            name="q"
+            placeholder="Search any Qur'anic word..."
+            value="{{ query }}"
+            autocomplete="off">
+        <button type="submit" aria-label="Search">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="10.5" cy="10.5" r="6.5"></circle>
+                <line x1="20" y1="20" x2="15.3" y2="15.3"></line>
+            </svg>
+        </button>
+    </form>
+</div>
+
+{% if result.type == 'word' %}
+
+    {# Every morpheme of the matched word, in order. Classified as
+       prefix/suffix/main from its own `features` flags rather than
+       assuming a fixed 3-slot prefix/stem/suffix layout — a word can
+       carry more than one clitic on either side (e.g. وَٱلْمُؤْمِنِينَ).
+
+       Consecutive morphemes on the SAME side are grouped into one display
+       segment (mirroring affix_card_markup, which already joins multiple
+       PREF/SUFF parts into a single card) -- so two prefixes render as one
+       teal box, not two. This keeps the hero row's box count in lockstep
+       with the card row below it: at most one box per side plus the main
+       body, matching at most one arrow per side plus the stem. #}
+    {% set ns = namespace(core=none) %}
+    {% set segments = [] %}
+    {% for m in result.morphemes %}
+        {% set is_affix = 'PREF' in (m.features or '') or 'SUFF' in (m.features or '') %}
+        {% set role = 'prefix' if 'PREF' in (m.features or '') else ('suffix' if 'SUFF' in (m.features or '') else 'main') %}
+        {% if not is_affix and ns.core is none %}
+            {% set ns.core = m %}
+        {% endif %}
+        {% if segments and segments[-1].role == role and is_affix %}
+            {% set _ = segments[-1].parts.append(m) %}
+        {% else %}
+            {% set _ = segments.append({'role': role, 'parts': [m]}) %}
+        {% endif %}
+    {% endfor %}
+    {% set core = ns.core or (result.morphemes[0] if result.morphemes else none) %}
+
+    <div class="eyebrow">ORIGINAL WORD</div>
+
+    <div class="word-row">
+        {% for seg in segments %}
+            <div class="segment {{ seg.role }}">{{ seg.parts|map(attribute='surface')|join('') }}</div>
+        {% endfor %}
+    </div>
+
+    <div class="label-row">
+        {% for seg in segments %}
+            <div class="seg-label {{ seg.role }}">{{ 'MAIN BODY' if seg.role == 'main' else (seg.role|upper ~ ("ES" if seg.parts|length > 1 else "")) }}</div>
+        {% endfor %}
+    </div>
+
+    {# Fan of arrows below the hero word, one pointing down at each card
+       actually rendered in .meaning-row (suffix left / stem center /
+       prefix right).
+
+       .meaning-row below only renders the slots that actually exist and
+       centers them as a group, rather than reserving three fixed
+       columns -- so a stem+single-affix pair sits centered as a tight
+       pair instead of the stem staying pinned at dead-center with a
+       lopsided empty column on the other side. The fan's anchor points
+       below mirror that: full thirds (150/450/750) when both side-cards
+       exist, a centered pair (300/600) when only one does, and a single
+       centered arrow (450) when neither does. #}
+    {% set has_prefix = result.prefix_card %}
+    {% set has_suffix = result.suffix_card %}
+    {# When both side-cards are present they flank the stem in fixed
+       thirds (150 / 450 / 750). When only one side-card exists, the
+       stem+affix pair is centered as a group instead, so their arrows
+       are re-centered around the same 450 midpoint (300 / 600) rather
+       than leaving the stem pinned at dead-center with a lopsided gap
+       on the empty side. With neither side-card present, the stem
+       arrow simply points straight down the middle. #}
+    {% if has_prefix and has_suffix %}
+        {% set suffix_x = 150 %}
+        {% set stem_x = 450 %}
+        {% set prefix_x = 750 %}
+    {% elif has_prefix %}
+        {% set suffix_x = none %}
+        {% set stem_x = 300 %}
+        {% set prefix_x = 600 %}
+    {% elif has_suffix %}
+        {% set suffix_x = 300 %}
+        {% set stem_x = 600 %}
+        {% set prefix_x = none %}
+    {% else %}
+        {% set suffix_x = none %}
+        {% set stem_x = 450 %}
+        {% set prefix_x = none %}
+    {% endif %}
+    {% macro arrow_path(target_x) %}
+        {%- set c1 = 450 + (target_x - 450) * 0.5 -%}
+        {%- set c2 = 450 + (target_x - 450) * 0.8 -%}
+        <path d="M450,20 C {{ c1 }},50 {{ c2 }},65 {{ target_x }},86" stroke="rgba(94,66,34,0.28)" stroke-width="1" stroke-dasharray="3,4" fill="none" marker-end="url(#arrowhead)"></path>
+    {% endmacro %}
+    <div class="connector">
+        <svg viewBox="0 0 900 90" preserveAspectRatio="none" width="100%" height="90">
+            <defs>
+                <marker id="arrowhead" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M0,0 L10,5 L0,10 z" fill="rgba(94,66,34,0.4)"></path>
+                </marker>
+            </defs>
+            <path d="M450,0 L450,20" stroke="rgba(94,66,34,0.28)" stroke-width="1" stroke-dasharray="3,4" fill="none"></path>
+            {% if suffix_x is not none %}{{ arrow_path(suffix_x) }}{% endif %}
+            {{ arrow_path(stem_x) }}
+            {% if prefix_x is not none %}{{ arrow_path(prefix_x) }}{% endif %}
+        </svg>
+    </div>
+
+    {% set word_meaning = result.word.word_meaning %}
+    {% set stem_meaning = result.word.stem_meaning %}
+    {% set root_meaning = result.word.root_meaning %}
+
+    {% macro root_card() %}
+    {# Precedence for the short gloss shown on the card:
+         1. short_override   -- hand-curated fix for a root the cleaner
+                                 got wrong (mirrors words.stem_override)
+         2. short_meaning    -- auto-cleaned from the raw Lane's text,
+                                 only trusted when short_confident=1
+         3. none             -- for the ~16% of roots the cleaner can't
+                                 yet handle (mostly bare cross-references
+                                 like "see 4, in two places"), there is no
+                                 clean short gloss to show.
+
+       IMPORTANT: unlike a previous version of this macro, case 3 does
+       NOT fall back to truncating the raw root_meaning.meaning into this
+       slot. That text is straight, uncleaned Lane's Lexicon markup --
+       source-citation abbreviations ("(S, K, &c.,)"), inflection notes
+       ("inf. n. تَأْخِيرٌ"), placeholder glyphs -- and truncating it at a
+       fixed character count routinely cuts mid-word/mid-citation. Shown
+       inside the same "short gloss" slot as the clean cases, with no
+       toggle to read the rest (the toggle below only appeared when
+       `short` was already set), it reads as a broken or badly-summarized
+       short gloss rather than what it actually is: the full classical
+       entry, unabridged.
+
+       So: the short slot only ever holds a clean, curated gloss. The
+       full classical entry (root_meaning.meaning) is always available
+       in its own clearly-labeled section below -- open by default when
+       there's no short gloss to show instead, since in that case it's
+       the only definition this root has. #}
+    {% set short = root_meaning.short_override if (root_meaning and root_meaning.short_override)
+                   else (root_meaning.short_meaning if (root_meaning and root_meaning.short_confident) else none) %}
+    <div class="card root">
+        {% if result.word.root %}
+        <a class="root-link" href="{{ url_for('search', q=result.word.root) }}">
+            <div class="label">ROOT</div>
+            <div class="root-letters">{{ result.word.root }}</div>
+        </a>
+        {% else %}
+        <div class="label">ROOT</div>
+        <div class="root-letters">—</div>
+        {% endif %}
+        <div class="divider"></div>
+        <div class="caption">CLASSICAL DEFINITION</div>
+        {% if short %}
+        <div class="meaning-desc small" style="margin-top:12px;">{{ short }}</div>
+        {% endif %}
+        {% if root_meaning and root_meaning.meaning %}
+        <details class="full-definition"{% if not short %} open{% endif %}>
+            <summary>Full definition</summary>
+            <div class="meaning-desc small" style="margin-top:8px;">{{ root_meaning.meaning }}</div>
+        </details>
+        {% endif %}
+    </div>
+    {% endmacro %}
+
+    {% macro affix_card_markup(card) %}
+    {# card.parts is a list because a word can carry more than one clitic
+       on the same side (e.g. وَٱلرَّسُولِ = "وَ" + "ٱل", two PREF
+       morphemes) -- so this renders every part's surface and, where
+       available, its own gloss, rather than assuming exactly one.
+       Each part gets its own isolated block: the Arabic letter is wrapped
+       with unicode-bidi:isolate so it can't drag the following English
+       label into RTL order, and parts are separated by a rule (not just
+       a margin) so multiple morphemes don't visually run together. #}
+    <div class="card affix">
+        <div class="label">{{ card.kind|upper }}{{ "ES" if card.parts|length > 1 else "" }}</div>
+        <div class="root-letters">{{ card.parts|map(attribute='text')|join(' + ') }}</div>
+        <div class="divider"></div>
+        {% set ns = namespace(has_gloss=false) %}
+        {% for item in card.parts %}
+            {% if item.meaning and item.meaning.meaning %}
+                {% set ns.has_gloss = true %}
+                <div class="affix-part"{% if not loop.first %} style="margin-top:14px; padding-top:14px; border-top:1px dashed var(--border);"{% endif %}>
+                    <div class="caption">
+                        <span class="affix-letter">{{ item.text }}</span>
+                        <span class="affix-grammar">{{ item.meaning.notes or (card.kind|upper ~ " MEANING") }}</span>
+                    </div>
+                    <div class="meaning-desc small" style="margin-top:6px;">{{ item.meaning.meaning }}</div>
+                </div>
+            {% endif %}
+        {% endfor %}
+        {% if not ns.has_gloss %}
+        <div class="caption">No gloss on file yet</div>
+        {% endif %}
+    </div>
+    {% endmacro %}
+
+    {# Hero cluster: suffix (if any) and prefix (if any) flank the stem's
+       MEANING card on either side; the ROOT branches straight down from
+       it below. Only the slots that actually exist are rendered as flex
+       children of a centered row, so the group as a whole -- one card,
+       a stem+single-affix pair, or the full trio -- always sits centered
+       rather than being spread across a fixed-width 3-column grid. The
+       root card lives inside the stem's own column, so it always tracks
+       directly under the stem regardless of which side cards exist. #}
+    <div class="meaning-cluster">
+        <div class="meaning-row">
+
+            {% if result.suffix_card %}
+            {{ affix_card_markup(result.suffix_card) }}
+            {% endif %}
+
+            {# The stem card, and the root branching below it, live together
+               in one column so the root always tracks directly under the
+               stem -- whether it's flanked by zero, one, or two affix
+               cards. Only the slots that actually exist are rendered
+               (rather than always reserving three fixed columns), so a
+               stem+single-affix pair centers as a tight group instead of
+               being spread across the full row width. #}
+            <div class="stem-column">
+                <div class="card meaning">
+                    {# Mirrors ROOT/AFFIX: label, then a copy of the actual word-part
+                       being glossed, then the gloss itself. `core` is the same
+                       non-affix morpheme already picked out above for the
+                       "MAIN BODY" segment -- i.e. the stem this meaning belongs to.
+                       Label only says STEM MEANING when we're actually showing the
+                       inflection-aware per-stem gloss; the lemma-level fallback
+                       below isn't stem-specific, so it keeps the plain label. #}
+                    <div class="label">{{ "STEM MEANING" if stem_meaning else "MEANING" }}</div>
+                    <div class="root-letters">{{ core.surface if core else result.word.surface }}</div>
+                    <div class="divider"></div>
+                    {% if stem_meaning %}
+                    {# Inflection-aware gloss for this exact stem (CAMeL), preferred
+                       over the lemma's generic citation-form dictionary sense. #}
+                    <div class="meaning-desc" style="margin-top:14px;">{{ stem_meaning }}</div>
+                    {% elif word_meaning and word_meaning.meaning %}
+                    <div class="meaning-desc" title="{{ word_meaning.meaning }}" style="margin-top:14px;">{{ word_meaning.meaning|truncate(160) }}</div>
+                    {% else %}
+                    <div class="meaning-desc" style="margin-top:14px;">—</div>
+                    {% endif %}
+                </div>
+
+                {% if result.word.root %}
+                <div class="branch"></div>
+
+                <div class="detail-row">
+                    {{ root_card() }}
+                </div>
+                {% endif %}
+            </div>
+
+            {% if result.prefix_card %}
+            {{ affix_card_markup(result.prefix_card) }}
+            {% endif %}
+
+        </div>
+    </div>
+
+    {% set family_with_meaning = result.word_family|selectattr("meaning")|list %}
+    {% if result.word.root and family_with_meaning %}
+    <div class="corpus">
+        <div class="corpus-header">
+            <div class="corpus-title">WORD FAMILY OF THE ROOT {{ result.root or result.word.root }}</div>
+            <div class="corpus-count"><strong>{{ family_with_meaning|length }}</strong> {{ "form" if family_with_meaning|length == 1 else "forms" }}</div>
+        </div>
+        {{ word_family_grid(family_with_meaning) }}
+    </div>
+    {% endif %}
+
+    <div class="corpus">
+        <div class="corpus-header">
+            {% if result.word.root %}
+            <div class="corpus-title">OCCURRENCES OF THE ROOT {{ result.root or result.word.root }}</div>
+            {% else %}
+            <div class="corpus-title">OTHER OCCURRENCES OF {{ result.word.surface }}</div>
+            {% endif %}
+            <div class="corpus-count"><strong>{{ result.occurrences|length }}</strong> {{ "time" if result.occurrences|length == 1 else "times" }}</div>
+        </div>
+        {{ occurrence_list(result.occurrences) }}
+    </div>
+
+    <div class="strip">
+        {% for m in result.morphemes %}
+            {% set role = 'prefix' if 'PREF' in (m.features or '') else ('suffix' if 'SUFF' in (m.features or '') else none) %}
+            {% if role %}
+            <div class="stat {{ role }}">
+                <div class="label">{{ role|upper }}</div>
+                <div class="value">{{ m.surface }}</div>
+                {% if m.meaning and m.meaning.meaning %}
+                <div class="desc">{{ m.meaning.meaning }}</div>
+                {% endif %}
+            </div>
+            {% endif %}
+        {% endfor %}
+
+        <div class="stat">
+            <div class="label">MAIN BODY</div>
+            <div class="value">{{ core.surface if core else result.word.surface }}</div>
+        </div>
+
+        <div class="stat">
+            <div class="label">STRIPPED FORM</div>
+            <div class="value">{{ core.stripped if core else result.word.stripped }}</div>
+            <div class="desc">Without affixes and diacritics</div>
+        </div>
+
+        {% if result.word.pattern %}
+        <div class="stat pattern">
+            <div class="label">PATTERN</div>
+            <div class="value">{{ result.word.pattern }}</div>
+        </div>
+        {% endif %}
+
+        <div class="stat">
+            <div class="label">POS</div>
+            <div class="value">{{ result.word.pos or "—" }}</div>
+        </div>
+    </div>
+
+    {{ verse_footer() }}
+
+{% elif result.type in ('root', 'camel_root') %}
+
+    <div class="root-hero">
+        <div class="eyebrow">
+            {% if result.type == 'camel_root' %}NOT FOUND IN THE QUR'AN — SHOWING ITS ROOT FAMILY{% else %}ROOT FAMILY{% endif %}
+        </div>
+        <div class="root-letters">{{ result.root }}</div>
+        <div class="note">
+            {% if result.type == 'camel_root' %}
+            "{{ result.query }}" itself doesn't occur in the Qur'an, but CAMeL identified its root as <strong>{{ result.root }}</strong> — here's every Qur'anic word built from it.
+            {% else %}
+            "{{ result.query }}" isn't a standalone Qur'anic word, but its root <strong>{{ result.root }}</strong> appears throughout the Qur'an.
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="cards-row">
+        <div class="card occ">
+            <div class="label">OCCURRENCES</div>
+            <div class="big-number">{{ result.occurrences|length }}</div>
+            <div class="small-caps">WORDS FROM THIS ROOT</div>
+        </div>
+    </div>
+
+    {% set family_with_meaning = result.word_family|selectattr("meaning")|list %}
+    {% if family_with_meaning %}
+    <div class="corpus">
+        <div class="corpus-header">
+            <div class="corpus-title">WORD FAMILY OF THE ROOT {{ result.root }}</div>
+            <div class="corpus-count"><strong>{{ family_with_meaning|length }}</strong> {{ "form" if family_with_meaning|length == 1 else "forms" }}</div>
+        </div>
+        {{ word_family_grid(family_with_meaning) }}
+    </div>
+    {% endif %}
+
+    <div class="corpus">
+        <div class="corpus-header">
+            <div class="corpus-title">OCCURRENCES OF THE ROOT {{ result.root }}</div>
+        </div>
+        {{ occurrence_list(result.occurrences) }}
+    </div>
+
+    {{ verse_footer() }}
+
+{% else %}
+
+    <div class="not-found">
+        No match found for "{{ result.query }}" — not as a word, a lemma, or a root.
+    </div>
+
+{% endif %}
+
+</div>
+
+{% endblock %}

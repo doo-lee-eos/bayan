@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+
+{% block title %}About · Bayan{% endblock %}
+
+{% block content %}
+{# Mirrors roots.html's palette/typography so this reads as the same app
+   rather than a bolted-on page. #}
+
+<style>
+:root {
+    --bg: #f6ecd8;
+    --panel: rgba(94,66,34,0.045);
+    --border: rgba(94,66,34,0.16);
+    --line: rgba(94,66,34,0.24);
+    --text: #2e2013;
+    --muted: #7a6248;
+    --teal: #3f8a76;
+    --gold: #b8862f;
+    --blue: #b1573c;
+    --font-serif: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    --font-arabic: "Amiri", "Traditional Arabic", serif;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.bayan {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 20px 60px;
+    text-align: center;
+}
+
+.about-wrap {
+    width: min(680px, 100%);
+    text-align: left;
+    margin-top: 20px;
+}
+
+.eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--gold);
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.about-title {
+    font-family: var(--font-serif);
+    font-size: 34px;
+    margin: 0 0 28px;
+    text-align: center;
+}
+
+.about-lede {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 18px;
+    line-height: 1.65;
+    color: var(--text);
+    margin-bottom: 34px;
+}
+
+.about-section {
+    margin-bottom: 30px;
+}
+
+.about-section .caption {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    color: var(--teal);
+    margin-bottom: 10px;
+}
+
+.about-section p {
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--text);
+    margin: 0 0 12px;
+}
+
+.about-section p:last-child {
+    margin-bottom: 0;
+}
+
+.about-section .arabic-inline {
+    font-family: var(--font-arabic);
+    direction: rtl;
+    unicode-bidi: isolate;
+}
+
+.about-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px 26px;
+    margin-bottom: 30px;
+}
+
+.about-panel ul {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.about-panel li {
+    font-size: 14.5px;
+    line-height: 1.65;
+    color: var(--text);
+    margin-bottom: 8px;
+}
+
+.about-panel li:last-child {
+    margin-bottom: 0;
+}
+
+.about-panel li strong {
+    color: var(--blue);
+}
+
+.about-cta {
+    text-align: center;
+    margin-top: 8px;
+}
+
+.about-cta a {
+    display: inline-block;
+    padding: 12px 24px;
+    border-radius: 12px;
+    background: linear-gradient(155deg, var(--gold), #8a651f);
+    color: #fbf3e2;
+    text-decoration: none;
+    font-size: 14px;
+    box-shadow: 0 6px 16px -6px rgba(184,134,47,.55);
+    transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.about-cta a:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -6px rgba(184,134,47,.7);
+}
+
+/* =========================
+   VERSE FOOTER
+========================= */
+
+.verse-footer {
+    width: 100%;
+    max-width: 1000px;
+    margin-top: 50px;
+    padding-top: 30px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+}
+
+.verse-footer .emblem {
+    flex: 0 0 auto;
+    opacity: 0.55;
+}
+
+.verse-footer .verse-text {
+    max-width: 640px;
+}
+
+.verse-footer .arabic {
+    color: var(--gold);
+    font-family: var(--font-arabic);
+    font-size: 20px;
+    line-height: 1.9;
+    direction: rtl;
+}
+
+.verse-footer .translation {
+    font-family: var(--font-serif);
+    margin-top: 10px;
+    font-size: 13px;
+    font-style: italic;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+@media (max-width: 800px) {
+    .verse-footer { flex-direction: column; }
+}
+</style>
+
+{% macro emblem() %}
+<svg class="emblem" width="44" height="44" viewBox="0 0 44 44" fill="none">
+    <g stroke="var(--gold)" stroke-width="1">
+        <circle cx="22" cy="22" r="4"></circle>
+        <circle cx="22" cy="10" r="6"></circle>
+        <circle cx="22" cy="34" r="6"></circle>
+        <circle cx="10" cy="22" r="6"></circle>
+        <circle cx="34" cy="22" r="6"></circle>
+        <circle cx="13" cy="13" r="6"></circle>
+        <circle cx="31" cy="13" r="6"></circle>
+        <circle cx="13" cy="31" r="6"></circle>
+        <circle cx="31" cy="31" r="6"></circle>
+    </g>
+</svg>
+{% endmacro %}
+
+<div class="bayan">
+
+    <div class="eyebrow">ABOUT THIS PROJECT</div>
+    <div class="about-title">What Bayan Is</div>
+
+    <div class="about-wrap">
+
+        <div class="about-lede">
+            Bayan ("<span class="arabic-inline">بَيَان</span>", clear
+            explanation) is a small tool for pulling apart any word in the
+            Qur'an &mdash; prefix, stem, suffix, root &mdash; and seeing
+            what each piece actually means, in context, rather than just a
+            single flattened translation.
+        </div>
+
+        <div class="about-section">
+            <div class="caption">WHY IT EXISTS</div>
+            <p>
+                Most translations give you one English sentence per verse.
+                That's enough to follow along, but it hides a lot: which
+                word carries which idea, what root a word shares with other
+                words elsewhere in the text, and how a prefix or suffix
+                quietly changes a meaning.
+            </p>
+            <p>
+                The goal isn't to hand you a bigger vocabulary list to
+                memorise &mdash; it's to build a feel for how the Arabic of
+                the Qur'an actually works. Once you can see that
+                <span class="arabic-inline">بَرْق</span> (lightning),
+                <span class="arabic-inline">أَبَارِيق</span> (jugs), and
+                <span class="arabic-inline">بَرِقَ</span> (dazzled, glistened)
+                all come from the same root, gleaming or flashing, you start
+                recognising that root instinctively wherever it shows up,
+                rather than looking each form up as an unrelated word every
+                time. Bayan surfaces that structure directly, word by word,
+                so the roots and patterns sink in on their own.
+            </p>
+        </div>
+
+        <div class="about-section">
+            <div class="caption">HOW SEARCH WORKS</div>
+            <p>
+                Type a word in any form &mdash; fully vocalized, stripped of
+                diacritics, or just its root &mdash; and Bayan tries to
+                match it against the exact surface first, then a
+                diacritic-free spelling, then its dictionary (lemma) form,
+                and finally its three-letter root, so a rough or partial
+                spelling still finds the right entry.
+            </p>
+        </div>
+
+        <div class="about-panel">
+            <ul>
+                <li><strong>Word breakdown</strong> &mdash; every prefix,
+                    stem, and suffix attached to a word, glossed
+                    individually.</li>
+                <li><strong>Root families</strong> &mdash; every distinct
+                    form a root takes across the Qur'an, grouped together
+                    rather than scattered verse by verse.</li>
+                <li><strong>Classical definitions</strong> &mdash; curated
+                    short glosses backed by the full entry from Lane's
+                    Arabic-English Lexicon, kept available in full rather
+                    than summarized away.</li>
+                <li><strong>Every occurrence</strong> &mdash; every ayah a
+                    word or root appears in, with its own translation
+                    alongside.</li>
+            </ul>
+        </div>
+
+        <div class="about-section">
+            <div class="caption">A NOTE ON ACCURACY</div>
+            <p>
+                Where the Qur'anic corpus's own annotations are available,
+                Bayan uses those directly. Where they're not, it falls back
+                to automated morphological analysis, which is occasionally
+                wrong. Curated corrections are added over time as they're
+                found &mdash; if something looks off, it probably is worth
+                a second look rather than taken as final.
+            </p>
+        </div>
+
+        <div class="about-cta">
+            <a href="/#search">Try a search &rarr;</a>
+        </div>
+
+    </div>
+
+    <div class="verse-footer">
+        {{ emblem() }}
+        <div class="verse-text">
+            <div class="arabic">كِتَابٌ أَنزَلْنَاهُ إِلَيْكَ مُبَارَكٌ لِّيَدَّبَّرُوا آيَاتِهِ وَلِيَتَذَكَّرَ أُولُو الْأَلْبَابِ</div>
+            <div class="translation">A blessed Book which We have revealed to you [O Muhammad] that they might reflect upon its verses and that those of understanding would be reminded. (Sad 38:29)</div>
+        </div>
+        {{ emblem() }}
+    </div>
+
+</div>
+
+{% endblock %}

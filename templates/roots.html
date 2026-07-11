@@ -1,0 +1,568 @@
+{% extends "base.html" %}
+
+{% block title %}Roots · Bayan{% endblock %}
+
+{% block content %}
+{# Mirrors result.html's palette/card styling so this page feels like the
+   same app, not a bolted-on section. The root "islands" below reuse the
+   exact same short_override -> short_meaning(if confident) -> full
+   fallback chain and the same .full-definition <details> toggle pattern
+   as the ROOT card on the result page, via fetch_all_roots(). #}
+
+<style>
+:root {
+    --bg: #f6ecd8;
+    --panel: rgba(94,66,34,0.045);
+    --border: rgba(94,66,34,0.16);
+    --line: rgba(94,66,34,0.24);
+    --text: #2e2013;
+    --muted: #7a6248;
+    --teal: #3f8a76;
+    --gold: #b8862f;
+    --blue: #b1573c;
+    --font-serif: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    --font-arabic: "Amiri", "Traditional Arabic", serif;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.bayan {
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:20px 20px 60px;
+    text-align: center;
+}
+
+.result-search{
+    width:100%;
+    display:flex;
+    justify-content:center;
+    margin-bottom:44px;
+}
+
+.hero-search{
+    width:min(720px,100%);
+    display:flex;
+    align-items:center;
+    gap:4px;
+    background:linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,255,255,.15));
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:6px 6px 6px 8px;
+    backdrop-filter:blur(20px);
+    box-shadow:0 1px 0 rgba(255,255,255,.6) inset, 0 24px 48px -28px rgba(94,66,34,.4);
+    transition:border-color .25s ease, box-shadow .25s ease;
+}
+.hero-search:focus-within{
+    border-color:rgba(184,134,47,.45);
+    box-shadow:0 0 0 3px rgba(184,134,47,.14), 0 24px 48px -28px rgba(94,66,34,.4);
+}
+.hero-search input{
+    flex:1;
+    min-width:0;
+    background:none;
+    border:none;
+    outline:none;
+    color:var(--text);
+    padding:16px 14px;
+    font-family:var(--font-serif);
+    font-style:italic;
+    font-size:17px;
+    letter-spacing:.2px;
+}
+.hero-search input::placeholder{ color:var(--muted); opacity:.85; }
+.hero-search button{
+    flex:0 0 auto;
+    width:46px;
+    height:46px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:none;
+    border-radius:50%;
+    background:linear-gradient(155deg, var(--gold), #8a651f);
+    color:#fbf3e2;
+    cursor:pointer;
+    box-shadow:0 6px 16px -6px rgba(184,134,47,.55);
+    transition:transform .18s ease, box-shadow .18s ease, filter .18s ease;
+}
+.hero-search button svg{ width:17px; height:17px; stroke:currentColor; }
+.hero-search button:hover{ transform:scale(1.06); filter:brightness(1.08); box-shadow:0 8px 20px -6px rgba(184,134,47,.7); }
+.hero-search button:active{ transform:scale(.94); }
+
+.eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--gold);
+    margin-bottom: 10px;
+}
+
+.roots-title {
+    font-family: var(--font-serif);
+    font-size: 34px;
+    margin: 0 0 6px;
+}
+
+.roots-count {
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 30px;
+}
+
+.roots-filter-wrap {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 40px;
+}
+
+.roots-filter {
+    width: min(420px, 100%);
+    padding: 11px 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: rgba(255,255,255,.5);
+    color: var(--text);
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 14px;
+    outline: none;
+}
+.roots-filter::placeholder { color: var(--muted); opacity: .8; }
+.roots-filter:focus { border-color: rgba(184,134,47,.45); }
+
+.roots-grid {
+    width: 100%;
+    max-width: 1100px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.root-island {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 20px 20px;
+    text-align: left;
+    cursor: pointer;
+    transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+.root-island:hover {
+    transform: translateY(-2px);
+    border-color: rgba(184,134,47,.4);
+    box-shadow: 0 14px 28px -20px rgba(94,66,34,.5);
+}
+.root-island:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+}
+
+.root-island.weak-match {
+    border-style: dashed;
+    opacity: .68;
+}
+.root-island.weak-match:hover {
+    opacity: 1;
+}
+
+.weak-match-badge {
+    display: none;
+    font-size: 10.5px;
+    line-height: 1.4;
+    color: var(--blue);
+    background: rgba(177,87,60,.08);
+    border: 1px solid rgba(177,87,60,.22);
+    border-radius: 8px;
+    padding: 6px 8px;
+    margin-bottom: 10px;
+}
+.root-island.weak-match .weak-match-badge {
+    display: block;
+}
+
+.root-island .top-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.root-island .root-letters {
+    font-family: var(--font-arabic);
+    font-size: 26px;
+    letter-spacing: 4px;
+    direction: rtl;
+}
+
+.root-island .occ-count {
+    flex: 0 0 auto;
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+.root-island .divider {
+    width: 36px;
+    height: 1px;
+    background: var(--border);
+    margin: 14px 0 12px;
+}
+
+.root-island .caption {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    color: var(--teal);
+    margin-bottom: 8px;
+}
+
+.root-island .meaning-desc {
+    font-family: var(--font-serif);
+    font-size: 14px;
+    font-style: italic;
+    line-height: 1.5;
+    color: var(--text);
+}
+.root-island .meaning-desc.muted {
+    color: var(--muted);
+    font-style: normal;
+}
+
+.root-island .full-definition {
+    margin-top: 12px;
+}
+.root-island .full-definition summary {
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--teal);
+    letter-spacing: .3px;
+    list-style: none;
+}
+.root-island .full-definition summary::-webkit-details-marker { display: none; }
+.root-island .full-definition summary::before { content: "+ "; }
+.root-island .full-definition[open] summary::before { content: "\2212 "; }
+.root-island .full-definition summary:hover { text-decoration: underline; }
+.root-island .full-definition .meaning-desc {
+    max-height: 220px;
+    overflow-y: auto;
+    padding-right: 4px;
+    margin-top: 8px;
+    font-size: 13px;
+}
+
+.root-island .search-link {
+    display: inline-block;
+    margin-top: 14px;
+    font-size: 12px;
+    color: var(--blue);
+    text-decoration: none;
+}
+.root-island .search-link:hover { text-decoration: underline; }
+
+.roots-empty {
+    color: var(--muted);
+    font-family: var(--font-serif);
+    font-style: italic;
+    margin-top: 40px;
+}
+
+/* =========================
+   VERSE FOOTER
+========================= */
+
+.verse-footer {
+    width: 100%;
+    max-width: 1000px;
+    margin-top: 50px;
+    padding-top: 30px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+}
+
+.verse-footer .emblem {
+    flex: 0 0 auto;
+    opacity: 0.55;
+}
+
+.verse-footer .verse-text {
+    max-width: 640px;
+}
+
+.verse-footer .arabic {
+    color: var(--gold);
+    font-family: var(--font-arabic);
+    font-size: 20px;
+    line-height: 1.9;
+    direction: rtl;
+}
+
+.verse-footer .translation {
+    font-family: var(--font-serif);
+    margin-top: 10px;
+    font-size: 13px;
+    font-style: italic;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+@media (max-width: 800px) {
+    .verse-footer { flex-direction: column; }
+}
+</style>
+
+{% macro emblem() %}
+<svg class="emblem" width="44" height="44" viewBox="0 0 44 44" fill="none">
+    <g stroke="var(--gold)" stroke-width="1">
+        <circle cx="22" cy="22" r="4"></circle>
+        <circle cx="22" cy="10" r="6"></circle>
+        <circle cx="22" cy="34" r="6"></circle>
+        <circle cx="10" cy="22" r="6"></circle>
+        <circle cx="34" cy="22" r="6"></circle>
+        <circle cx="13" cy="13" r="6"></circle>
+        <circle cx="31" cy="13" r="6"></circle>
+        <circle cx="13" cy="31" r="6"></circle>
+        <circle cx="31" cy="31" r="6"></circle>
+    </g>
+</svg>
+{% endmacro %}
+
+{% macro verse_footer() %}
+<div class="verse-footer">
+    {{ emblem() }}
+    <div class="verse-text">
+        <div class="arabic">كِتَابٌ أَنزَلْنَاهُ إِلَيْكَ مُبَارَكٌ لِّيَدَّبَّرُوا آيَاتِهِ وَلِيَتَذَكَّرَ أُولُو الْأَلْبَابِ</div>
+        <div class="translation">A blessed Book which We have revealed to you [O Muhammad] that they might reflect upon its verses and that those of understanding would be reminded. (Sad 38:29)</div>
+    </div>
+    {{ emblem() }}
+</div>
+{% endmacro %}
+
+<div class="bayan">
+
+    <div class="result-search">
+        <form action="/search" method="GET" class="hero-search">
+            <input
+                type="text"
+                name="q"
+                placeholder="Search any Qur'anic word..."
+                autocomplete="off">
+            <button type="submit" aria-label="Search">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="10.5" cy="10.5" r="6.5"></circle>
+                    <line x1="20" y1="20" x2="15.3" y2="15.3"></line>
+                </svg>
+            </button>
+        </form>
+    </div>
+
+    <div class="eyebrow">EVERY ROOT IN THE QUR'AN</div>
+    <div class="roots-title">Browse Roots</div>
+    <div class="roots-count">{{ roots|length }} roots &middot; click one to see every occurrence</div>
+
+    <div class="roots-filter-wrap">
+        <input
+            type="text"
+            id="rootsFilter"
+            class="roots-filter"
+            placeholder="Filter by root or meaning..."
+            autocomplete="off">
+    </div>
+
+    <div class="roots-grid" id="rootsGrid">
+        {% for r in roots %}
+        {% set short = r.short %}
+        <div
+            class="root-island"
+            tabindex="0"
+            role="link"
+            data-href="/search?q={{ r.root | urlencode }}"
+            data-root="{{ r.root|lower }}"
+            data-short="{{ (r.short or '')|lower }}"
+            data-meaning="{{ (r.meaning or '')|lower }}"
+            data-occurrence="{{ r.occurrence_count or 0 }}"
+            aria-label="Search occurrences of the root {{ r.root }}"
+        >
+            <div class="top-row">
+                <div class="root-letters">{{ r.root }}</div>
+                {% if r.occurrence_count %}
+                <div class="occ-count">{{ r.occurrence_count }} {{ "occurrence" if r.occurrence_count == 1 else "occurrences" }}</div>
+                {% endif %}
+            </div>
+
+            <div class="divider"></div>
+            <div class="caption">BRIEF MEANING</div>
+
+            <div class="weak-match-badge">Only found in the full classical definition below — may not be central to this root</div>
+
+            {% if short %}
+            <div class="meaning-desc">{{ short }}</div>
+            {% elif r.meaning %}
+            <div class="meaning-desc" title="{{ r.meaning }}">{{ r.meaning|truncate(100) }}</div>
+            {% else %}
+            <div class="meaning-desc muted">No gloss on file yet.</div>
+            {% endif %}
+
+            {% if r.meaning and short %}
+            <details class="full-definition">
+                <summary>Full definition</summary>
+                <div class="meaning-desc">{{ r.meaning }}</div>
+            </details>
+            {% endif %}
+
+            <a class="search-link" href="/search?q={{ r.root | urlencode }}">Search this root &rarr;</a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="roots-empty" id="rootsEmpty" style="display:none;">No roots match that filter.</div>
+
+    {{ verse_footer() }}
+
+</div>
+
+<script>
+(function () {
+    var grid = document.getElementById('rootsGrid');
+    if (!grid) return;
+
+    var islands = Array.prototype.slice.call(grid.querySelectorAll('.root-island'));
+
+    // Clicking (or Enter/Space-ing) anywhere on an island navigates to that
+    // root's search results -- except inside the "Full definition" toggle,
+    // which should just expand/collapse in place, and the explicit
+    // "Search this root" link, which already navigates on its own via href
+    // and doubles as the no-JS fallback.
+    islands.forEach(function (card) {
+        var toggle = card.querySelector('.full-definition');
+        if (toggle) {
+            toggle.addEventListener('click', function (e) {
+                e.stopPropagation();
+            });
+        }
+
+        var link = card.querySelector('.search-link');
+        if (link) {
+            link.addEventListener('click', function (e) {
+                e.stopPropagation();
+            });
+        }
+
+        card.addEventListener('click', function () {
+            window.location.href = card.dataset.href;
+        });
+
+        card.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                window.location.href = card.dataset.href;
+            }
+        });
+    });
+
+    // Lightweight client-side filter -- 1,600+ islands is a lot to scroll
+    // through blind, so let people narrow by root text or English gloss
+    // without a round trip to the server.
+    //
+    // Two-tier matching, not a flat substring check over everything:
+    //   STRONG  -- query appears in the root spelling or the curated
+    //              short gloss. Both are short, deliberately-written
+    //              text, so a substring hit here is a genuinely relevant
+    //              root.
+    //   WEAK    -- query appears nowhere in root/short, but does show up
+    //              in the full raw classical (Lane's Lexicon) entry.
+    //              Those entries are long, multi-sense dictionary dumps;
+    //              a word buried somewhere inside one is often just an
+    //              incidental word in some unrelated sub-sense, not
+    //              something that root is actually "about". Matched with
+    //              a whole-word boundary (not substring) to at least
+    //              avoid matching fragments inside longer words, then
+    //              shown -- but visually dimmed, badged, and sorted
+    //              after every strong match -- rather than either hidden
+    //              (that raw text is still occasionally the only place a
+    //              real sense lives) or presented as equally relevant.
+    var filterInput = document.getElementById('rootsFilter');
+    var emptyMsg = document.getElementById('rootsEmpty');
+
+    function escapeRegExp(s) {
+        return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    if (filterInput) {
+        filterInput.addEventListener('input', function () {
+            var q = filterInput.value.trim().toLowerCase();
+
+            // Reset to original document order first, every time, so
+            // re-filtering (or clearing the box) doesn't compound
+            // whatever order a previous filter pass left things in.
+            islands.forEach(function (card) {
+                grid.appendChild(card);
+            });
+
+            if (!q) {
+                islands.forEach(function (card) {
+                    card.style.display = '';
+                    card.classList.remove('weak-match');
+                });
+                emptyMsg.style.display = 'none';
+                return;
+            }
+
+            var wholeWord = new RegExp('\\b' + escapeRegExp(q) + '\\b');
+            var visibleCount = 0;
+            var strongCards = [];
+            var weakCards = [];
+
+            islands.forEach(function (card) {
+                var strong = card.dataset.root.indexOf(q) !== -1 ||
+                             card.dataset.short.indexOf(q) !== -1;
+                var weak = !strong && card.dataset.meaning &&
+                           wholeWord.test(card.dataset.meaning);
+                var match = strong || weak;
+
+                card.style.display = match ? '' : 'none';
+                card.classList.toggle('weak-match', weak);
+
+                if (match) {
+                    visibleCount++;
+                    (weak ? weakCards : strongCards).push(card);
+                }
+            });
+
+            // Strong matches are the ones NOT suspected of being
+            // irrelevant (see the tier explanation above) -- order those
+            // by occurrence count, most-attested root first, so the
+            // roots most worth knowing surface at the top. Weak
+            // (full-definition-only) matches stay deprioritized at the
+            // end, in their original order -- ranking them by occurrence
+            // too would dress up an already-uncertain match as if it were
+            // confidently ordered.
+            strongCards.sort(function (a, b) {
+                return (parseInt(b.dataset.occurrence, 10) || 0) -
+                       (parseInt(a.dataset.occurrence, 10) || 0);
+            });
+
+            strongCards.forEach(function (card) {
+                grid.appendChild(card);
+            });
+            weakCards.forEach(function (card) {
+                grid.appendChild(card);
+            });
+
+            emptyMsg.style.display = visibleCount === 0 ? '' : 'none';
+        });
+    }
+})();
+</script>
+
+{% endblock %}
