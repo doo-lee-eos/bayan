@@ -716,13 +716,17 @@ body {
 @media (max-width: 560px) {
     .bayan { padding: 16px 14px 32px; }
 
-    /* Segment blocks: DOM order is already prefix, main, suffix (the
-       same order Arabic is read in), so stacking vertically needs no
-       explicit `order` overrides -- unlike .meaning-row below, whose
-       DOM order is suffix/stem/prefix for desktop's RTL row. */
-    .word-row { flex-direction: column; gap: 10px; }
+    /* Word split (prefix/main body/suffix) stays horizontal even on
+       narrow phones -- only the meaning cards below it (.meaning-row,
+       handled in the 800px breakpoint above) stack vertically. Shrink
+       the segment text and gap so the row still fits without wrapping
+       on most screens; flex-wrap stays on as a fallback for unusually
+       long words, and the connecting divider is hidden so an orphaned
+       line doesn't appear if a wrap ever does happen. */
+    .word-row { gap: 4px; row-gap: 10px; }
     .seg-block + .seg-block .segment::before { display: none; }
-    .segment { font-size: 34px; padding: 0 14px 8px; }
+    .segment { font-size: 30px; padding: 0 10px 8px; }
+    .seg-label { padding: 0 10px; font-size: 9.5px; }
 
     /* Occurrence rows: the fixed 170px ref sidebar plus the chevron
        leaves too little room for the Arabic line + translation to
