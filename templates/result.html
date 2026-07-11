@@ -231,6 +231,14 @@ body {
 
 @media (max-width: 800px) {
     .meaning-row { flex-direction: column; align-items: center; }
+    /* DOM order is suffix, stem-column, prefix (that's what makes the
+       DESKTOP row read correctly R-to-L with no explicit direction: rtl).
+       Stacked vertically that same order reads backwards, so pin an
+       explicit order here instead: prefix on top, stem in the middle,
+       suffix last -- matching the actual reading order of the word. */
+    .meaning-row > .card.affix.prefix { order: 1; }
+    .meaning-row > .stem-column       { order: 2; }
+    .meaning-row > .card.affix.suffix { order: 3; }
 }
 
 .card.meaning {
@@ -1092,7 +1100,7 @@ body {
        with unicode-bidi:isolate so it can't drag the following English
        label into RTL order, and parts are separated by a rule (not just
        a margin) so multiple morphemes don't visually run together. #}
-    <div class="card affix">
+    <div class="card affix {{ card.kind }}">
         <div class="label">{{ card.kind|upper }}{{ "ES" if card.parts|length > 1 else "" }}</div>
         <div class="root-letters">{{ card.parts|map(attribute='text')|join(' + ') }}</div>
         <div class="divider"></div>
