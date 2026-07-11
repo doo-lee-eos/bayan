@@ -124,9 +124,23 @@ body {
 .word-row {
     display: flex;
     direction: rtl;
-    align-items: flex-end;
+    align-items: flex-start;
     justify-content: center;
     flex-wrap: wrap;
+}
+
+/* Each segment (Arabic word-part) and its label are grouped into one
+   atomic block. Previously these lived in two separate flex rows
+   (.word-row / .label-row) that wrapped independently -- fine when
+   everything fit on one line each, but on narrow screens the Arabic
+   row could wrap onto two lines while the (much smaller) label row
+   stayed on one, leaving labels drifting out from under their segment
+   and overlapping the row above. Pairing them means a block always
+   wraps as a whole, so a label can never separate from its segment. */
+.seg-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .segment {
@@ -139,7 +153,7 @@ body {
     border-bottom: 1px dotted var(--seg-color, var(--line));
 }
 
-.segment + .segment::before {
+.seg-block + .seg-block .segment::before {
     content: "";
     position: absolute;
     top: -6px;
@@ -152,19 +166,12 @@ body {
 .segment.main   { --seg-color: rgba(94,66,34,0.3); color: var(--text); }
 .segment.prefix { --seg-color: var(--teal); color: var(--teal); }
 
-.label-row {
-    display: flex;
-    direction: rtl;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin-top: 14px;
-}
-
 .seg-label {
     padding: 0 26px;
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 1.5px;
+    margin-top: 14px;
 }
 
 .seg-label.suffix { color: var(--gold); }
@@ -709,6 +716,14 @@ body {
 @media (max-width: 560px) {
     .bayan { padding: 16px 14px 32px; }
 
+    /* Segment blocks: DOM order is already prefix, main, suffix (the
+       same order Arabic is read in), so stacking vertically needs no
+       explicit `order` overrides -- unlike .meaning-row below, whose
+       DOM order is suffix/stem/prefix for desktop's RTL row. */
+    .word-row { flex-direction: column; gap: 10px; }
+    .seg-block + .seg-block .segment::before { display: none; }
+    .segment { font-size: 34px; padding: 0 14px 8px; }
+
     /* Occurrence rows: the fixed 170px ref sidebar plus the chevron
        leaves too little room for the Arabic line + translation to
        breathe, so stack the ref above the body instead of squeezing
@@ -966,13 +981,10 @@ body {
 
     <div class="word-row">
         {% for seg in segments %}
+        <div class="seg-block {{ seg.role }}">
             <div class="segment {{ seg.role }}">{{ seg.parts|map(attribute='surface')|join('') }}</div>
-        {% endfor %}
-    </div>
-
-    <div class="label-row">
-        {% for seg in segments %}
             <div class="seg-label {{ seg.role }}">{{ 'MAIN BODY' if seg.role == 'main' else (seg.role|upper ~ ("ES" if seg.parts|length > 1 else "")) }}</div>
+        </div>
         {% endfor %}
     </div>
 
