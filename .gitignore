@@ -1,1 +1,4 @@
 databases/meanings.db
+.venv/
+__pycache__/
+*.pyc
