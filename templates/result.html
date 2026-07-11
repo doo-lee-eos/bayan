@@ -961,21 +961,36 @@ body {
        teal box, not two. This keeps the hero row's box count in lockstep
        with the card row below it: at most one box per side plus the main
        body, matching at most one arrow per side plus the stem. #}
-    {% set ns = namespace(core=none) %}
+    {# `core_surface`/`core_stripped` join EVERY consecutive non-affix
+       morpheme, not just the first one. A word like يَوْمَئِذٍ ("that
+       day") splits into two separate MAIN-role morphemes (يَوْمَ +
+       ئِذٍ) rather than one -- previously `core` only captured the
+       first of those, so the STEM MEANING card's word display and the
+       MAIN BODY / STRIPPED FORM stats silently dropped the second half
+       even though the gloss itself ("That day") already covers both. #}
+    {% set ns = namespace(core_surface='', core_stripped='', core_set=false) %}
     {% set segments = [] %}
     {% for m in result.morphemes %}
         {% set is_affix = 'PREF' in (m.features or '') or 'SUFF' in (m.features or '') %}
         {% set role = 'prefix' if 'PREF' in (m.features or '') else ('suffix' if 'SUFF' in (m.features or '') else 'main') %}
-        {% if not is_affix and ns.core is none %}
-            {% set ns.core = m %}
+        {% if not is_affix %}
+            {% set ns.core_surface = ns.core_surface ~ (m.surface or '') %}
+            {% set ns.core_stripped = ns.core_stripped ~ (m.stripped or '') %}
+            {% set ns.core_set = true %}
         {% endif %}
-        {% if segments and segments[-1].role == role and is_affix %}
+        {# Merge ANY consecutive same-role run into one display segment --
+           not just affix runs. Two prefixes already collapsed into one
+           teal box; two consecutive MAIN morphemes (as above) now do
+           the same, instead of rendering as two separate MAIN BODY
+           boxes with only one gloss underneath them. #}
+        {% if segments and segments[-1].role == role %}
             {% set _ = segments[-1].parts.append(m) %}
         {% else %}
             {% set _ = segments.append({'role': role, 'parts': [m]}) %}
         {% endif %}
     {% endfor %}
-    {% set core = ns.core or (result.morphemes[0] if result.morphemes else none) %}
+    {% set core_surface = ns.core_surface if ns.core_set else result.word.surface %}
+    {% set core_stripped = ns.core_stripped if ns.core_set else result.word.stripped %}
 
     <div class="eyebrow">ORIGINAL WORD</div>
 
@@ -1167,7 +1182,7 @@ body {
                        inflection-aware per-stem gloss; the lemma-level fallback
                        below isn't stem-specific, so it keeps the plain label. #}
                     <div class="label">{{ "STEM MEANING" if stem_meaning else "MEANING" }}</div>
-                    <div class="root-letters">{{ core.surface if core else result.word.surface }}</div>
+                    <div class="root-letters">{{ core_surface }}</div>
                     <div class="divider"></div>
                     {% if stem_meaning %}
                     {# Inflection-aware gloss for this exact stem (CAMeL), preferred
@@ -1235,12 +1250,12 @@ body {
 
         <div class="stat">
             <div class="label">MAIN BODY</div>
-            <div class="value">{{ core.surface if core else result.word.surface }}</div>
+            <div class="value">{{ core_surface }}</div>
         </div>
 
         <div class="stat">
             <div class="label">STRIPPED FORM</div>
-            <div class="value">{{ core.stripped if core else result.word.stripped }}</div>
+            <div class="value">{{ core_stripped }}</div>
             <div class="desc">Without affixes and diacritics</div>
         </div>
 
