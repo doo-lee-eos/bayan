@@ -17,6 +17,36 @@
         .brand-mark svg { display: block; }
         .brand-mark { display: flex; align-items: center; justify-content: center; }
         .brand-title { font-family: var(--font-display); }
+
+        /* Mobile header/nav overrides. Layered here (rather than relying
+           solely on style.css) so the header degrades gracefully on
+           narrow screens regardless of that stylesheet's own rules:
+           the logo + wordmark stay on one row, the nav wraps to its own
+           row below and its links get breathing room for touch targets. */
+        @media (max-width: 640px) {
+            .header-inner {
+                flex-wrap: wrap;
+                row-gap: 10px;
+                padding: 12px 16px;
+            }
+            .brand-title { font-size: 18px; }
+            .brand-subtitle { font-size: 9px; }
+            .main-nav {
+                width: 100%;
+                justify-content: center;
+                gap: 20px;
+                flex-wrap: wrap;
+            }
+            .main-nav a {
+                font-size: 13px;
+                padding: 4px 2px;
+            }
+        }
+
+        /* Prevent horizontal scroll from any element that doesn't
+           account for narrow viewports (SVGs, wide fixed-width rows,
+           long unbroken Arabic strings, etc). */
+        html, body { max-width: 100%; overflow-x: hidden; }
     </style>
 
     {% block css %}{% endblock %}

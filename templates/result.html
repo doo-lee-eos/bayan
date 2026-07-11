@@ -697,6 +697,28 @@ body {
     .strip { row-gap: 24px; }
     .verse-footer { flex-direction: column; }
 }
+
+@media (max-width: 560px) {
+    .bayan { padding: 16px 14px 32px; }
+
+    /* Occurrence rows: the fixed 170px ref sidebar plus the chevron
+       leaves too little room for the Arabic line + translation to
+       breathe, so stack the ref above the body instead of squeezing
+       everything into one row. */
+    .occurrence {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+        padding: 14px 16px;
+    }
+    .occurrence .ref { flex: 0 0 auto; }
+    .occurrence .chevron { display: none; }
+    .occurrence .arabic-line { font-size: 17px; }
+
+    .card { min-width: 0; width: 100%; max-width: 360px; }
+    .root-hero .root-letters { font-size: 42px; letter-spacing: 6px; }
+    .corpus-header { flex-wrap: wrap; gap: 8px; }
+}
 </style>
 
 {% macro emblem() %}
