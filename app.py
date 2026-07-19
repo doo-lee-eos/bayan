@@ -2,7 +2,7 @@ from flask import Flask
 from flask import render_template
 from flask import request
 
-from services.search import lookup, fetch_all_roots
+from services.search import lookup, lookup_phrase, fetch_all_roots
 
 app = Flask(__name__)
 
@@ -20,7 +20,13 @@ def search():
     if not query:
         return render_template("index.html")
 
-    result = lookup(query)
+    # More than one whitespace-separated token -> break the phrase down
+    # word by word instead of searching for it as one literal string
+    # (which would never match anything in the single-word `words` table).
+    if len(query.split()) > 1:
+        result = lookup_phrase(query)
+    else:
+        result = lookup(query)
 
     return render_template(
         "result.html",

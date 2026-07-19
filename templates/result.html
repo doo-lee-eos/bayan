@@ -664,6 +664,64 @@ body {
 }
 
 /* =========================
+   PHRASE BREAKDOWN
+========================= */
+
+.phrase-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 40px;
+}
+
+.phrase-hero .phrase-original {
+    font-family: var(--font-arabic);
+    font-size: 40px;
+    font-weight: 700;
+    direction: rtl;
+    color: var(--teal);
+}
+
+.phrase-hero .note {
+    font-family: var(--font-serif);
+    font-style: italic;
+    color: var(--muted);
+    font-size: 15px;
+    margin-top: 14px;
+    max-width: 520px;
+}
+
+.phrase-word-block {
+    width: 100%;
+    max-width: 900px;
+    margin-bottom: 10px;
+}
+
+.phrase-word-index {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 6px;
+}
+
+.phrase-word-surface {
+    font-family: var(--font-arabic);
+    font-size: 30px;
+    font-weight: 700;
+    direction: rtl;
+    color: var(--text);
+    margin-bottom: 24px;
+}
+
+.phrase-divider {
+    width: min(600px, 90%);
+    height: 1px;
+    background: var(--line);
+    margin: 50px auto;
+}
+
+/* =========================
    VERSE FOOTER
 ========================= */
 
@@ -940,7 +998,7 @@ body {
         <input
             type="text"
             name="q"
-            placeholder="Search any Qur'anic word..."
+            placeholder="Search any Qur'anic word or phrase..."
             value="{{ query }}"
             autocomplete="off">
         <button type="submit" aria-label="Search">
@@ -952,7 +1010,7 @@ body {
     </form>
 </div>
 
-{% if result.type == 'word' %}
+{% macro word_breakdown(result, show_occurrences=true) %}
 
     {# Every morpheme of the matched word, in order. Classified as
        prefix/suffix/main from its own `features` flags rather than
@@ -1226,6 +1284,7 @@ body {
     </div>
     {% endif %}
 
+    {% if show_occurrences %}
     <div class="corpus">
         <div class="corpus-header">
             {% if result.word.root %}
@@ -1237,48 +1296,11 @@ body {
         </div>
         {{ occurrence_list(result.occurrences) }}
     </div>
+    {% endif %}
 
-    <div class="strip">
-        {% for m in result.morphemes %}
-            {% set role = 'prefix' if 'PREF' in (m.features or '') else ('suffix' if 'SUFF' in (m.features or '') else none) %}
-            {% if role %}
-            <div class="stat {{ role }}">
-                <div class="label">{{ role|upper }}</div>
-                <div class="value">{{ m.surface }}</div>
-                {% if m.meaning and m.meaning.meaning %}
-                <div class="desc">{{ m.meaning.meaning }}</div>
-                {% endif %}
-            </div>
-            {% endif %}
-        {% endfor %}
+{% endmacro %}
 
-        <div class="stat">
-            <div class="label">MAIN BODY</div>
-            <div class="value">{{ core_surface }}</div>
-        </div>
-
-        <div class="stat">
-            <div class="label">STRIPPED FORM</div>
-            <div class="value">{{ core_stripped }}</div>
-            <div class="desc">Without affixes and diacritics</div>
-        </div>
-
-        {% if result.word.pattern %}
-        <div class="stat pattern">
-            <div class="label">PATTERN</div>
-            <div class="value">{{ result.word.pattern }}</div>
-        </div>
-        {% endif %}
-
-        <div class="stat">
-            <div class="label">POS</div>
-            <div class="value">{{ result.word.pos or "—" }}</div>
-        </div>
-    </div>
-
-    {{ verse_footer() }}
-
-{% elif result.type in ('root', 'camel_root') %}
+{% macro root_breakdown(result, show_occurrences=true) %}
 
     <div class="root-hero">
         <div class="eyebrow">
@@ -1313,21 +1335,76 @@ body {
     </div>
     {% endif %}
 
+    {% if show_occurrences %}
     <div class="corpus">
         <div class="corpus-header">
             <div class="corpus-title">OCCURRENCES OF THE ROOT {{ result.root }}</div>
         </div>
         {{ occurrence_list(result.occurrences) }}
     </div>
+    {% endif %}
 
-    {{ verse_footer() }}
+{% endmacro %}
 
-{% else %}
+{% macro none_breakdown(result) %}
 
     <div class="not-found">
         No match found for "{{ result.query }}" — not as a word, a lemma, or a root.
     </div>
 
+{% endmacro %}
+
+{% if result.type == 'word' %}
+
+    {{ word_breakdown(result) }}
+
+{% elif result.type in ('root', 'camel_root') %}
+
+    {{ root_breakdown(result) }}
+
+{% elif result.type == 'phrase' %}
+
+    <div class="phrase-hero">
+        <div class="eyebrow">PHRASE BREAKDOWN</div>
+        <div class="phrase-original">{{ result.query }}</div>
+    </div>
+
+    {% for w in result.words %}
+    <div class="phrase-word-block">
+        <div class="phrase-word-index">WORD {{ loop.index }} OF {{ result.words|length }}</div>
+        <div class="phrase-word-surface">{{ w.query }}</div>
+
+        {% if w.type == 'word' %}
+            {{ word_breakdown(w, show_occurrences=false) }}
+        {% elif w.type in ('root', 'camel_root') %}
+            {{ root_breakdown(w, show_occurrences=false) }}
+        {% else %}
+            {{ none_breakdown(w) }}
+        {% endif %}
+    </div>
+    {% if not loop.last %}<div class="phrase-divider"></div>{% endif %}
+    {% endfor %}
+
+    <div class="corpus">
+        <div class="corpus-header">
+            <div class="corpus-title">OCCURRENCES OF THE PHRASE</div>
+            <div class="corpus-count"><strong>{{ result.phrase_occurrence_count }}</strong> {{ "time" if result.phrase_occurrence_count == 1 else "times" }}</div>
+        </div>
+        {% if result.phrase_occurrences %}
+        {{ occurrence_list(result.phrase_occurrences) }}
+        {% else %}
+        <div class="not-found" style="padding:30px 20px;">This exact sequence of words doesn't occur together anywhere else in the Qur'an.</div>
+        {% endif %}
+    </div>
+
+{% else %}
+
+    {{ none_breakdown(result) }}
+
+{% endif %}
+
+{% if result.type != 'none' %}
+{{ verse_footer() }}
 {% endif %}
 
 </div>

@@ -1006,7 +1006,49 @@ def _strip_leading_parenthetical(text):
     return remainder or text
 
 
-def _strip_leading_affix_glosses(text, cur, morphemes):
+def _is_verb_subject_agreement_suffix(suffix_morpheme, core_morpheme):
+    """
+    True if `suffix_morpheme` (a PRON|SUFF morpheme) is the attached
+    realization of the verb's OWN subject-person/gender/number agreement
+    -- e.g. the وا۟ in أَصْلِحُوا۟ (imperative "set right!", 2MP) -- rather
+    than an independent object or possessive pronoun clitic that happens
+    to be attached to the same word.
+
+    Confirmed against quran.db's morphemes table: when a SUFF is subject
+    agreement, the corpus already records that SAME person/gender/number
+    tag on the core VERB morpheme's own `features` (e.g. the stem's own
+    features already read "IMPV|VF:4|ROOT:صلح|LEM:أَصْلَحَ|2MP" for
+    أَصْلِحُوا۟, matching the suffix's own "PRON|SUFF|2MP" exactly) --
+    since the verb's conjugation and its subject marker are two views of
+    the one same agreement, not two independent pieces of information.
+    An independent object/possessive pronoun has no reason to duplicate
+    onto the stem's own features this way.
+
+    This matters for `_strip_leading_affix_glosses`: a subject-agreement
+    suffix like this doesn't surface as an extra leading word in a
+    stem-only English gloss at all (nobody writes "you-all set right",
+    they write "set right"), unlike a genuine leaked possessive ("your
+    Lord"). Treating it the same as a possible leak forces a clean,
+    already-correct curated gloss through the same "unconfirmed, don't
+    trust it" fallback that exists for the genuinely leaky cases,
+    discarding a good hand-curated override in favour of a worse guess.
+    """
+
+    if not suffix_morpheme or not core_morpheme:
+        return False
+
+    suffix_features = (suffix_morpheme.get("features") or "").split("|")
+    if len(suffix_features) < 3 or suffix_features[0] != "PRON" or suffix_features[1] != "SUFF":
+        return False
+
+    if (core_morpheme.get("tag") or "").upper() != "V":
+        return False
+
+    core_features = (core_morpheme.get("features") or "").split("|")
+    return suffix_features[2] in core_features
+
+
+def _strip_leading_affix_glosses(text, cur, morphemes, core_morpheme=None):
     """
     Returns (stripped_text, fully_stripped).
 
@@ -1029,6 +1071,13 @@ def _strip_leading_affix_glosses(text, cur, morphemes):
     Callers should fall back to a CAMeL-derived gloss (computed from the
     stem morpheme's own surface alone, so it can never carry this leak)
     whenever `fully_stripped` comes back False.
+
+    `core_morpheme`, if given, lets a SUFF morpheme that's really the
+    verb's own subject-agreement marker (see
+    `_is_verb_subject_agreement_suffix`) skip the match requirement
+    entirely, the same way an unmatched definite-article PREF already
+    does just below -- since that kind of suffix was never expected to
+    leak a leading word into `text` in the first place.
     """
     if not text or not morphemes:
         return text, True
@@ -1079,6 +1128,14 @@ def _strip_leading_affix_glosses(text, cur, morphemes):
                 # so an unmatched "ال" is never actually a leak, and
                 # shouldn't force a fallback away from an otherwise-good
                 # per-occurrence gloss.
+                pass
+            elif _is_verb_subject_agreement_suffix(m, core_morpheme):
+                # This SUFF is the verb's own subject-agreement marker,
+                # not an independent pronoun -- see
+                # _is_verb_subject_agreement_suffix's docstring. It was
+                # never expected to appear as a leading word in `text` at
+                # all, so failing to match it here isn't evidence of a
+                # leak either.
                 pass
             else:
                 fully_stripped = False
@@ -1249,6 +1306,11 @@ def attach_meanings(result):
         elif "SUFF" in features:
             suffix_morphemes.append(m)
 
+    # Needed so _strip_leading_affix_glosses can tell a verb's own
+    # subject-agreement SUFF apart from an independent leaking pronoun --
+    # see _is_verb_subject_agreement_suffix.
+    core_morpheme = _get_core_morpheme(result.get("morphemes", []))
+
     if stem_override:
         # Hand-curated text, not CAMeL's `stemgloss` feature -- but it's
         # shown in the exact same STEM MEANING card, so it needs the same
@@ -1264,7 +1326,7 @@ def attach_meanings(result):
         # the stem morpheme's own surface alone, so it can't carry this
         # leak), on the same reasoning as the words.english branch below.
         stem_only, fully_stripped = _strip_leading_affix_glosses(
-            stem_override, cur, prefix_morphemes + suffix_morphemes
+            stem_override, cur, prefix_morphemes + suffix_morphemes, core_morpheme
         )
         if fully_stripped:
             word["stem_meaning"] = strip_definite_article_gloss(stem_only)
@@ -1292,7 +1354,7 @@ def attach_meanings(result):
         # first, or they duplicate the PREFIX/SUFFIX cards' own glosses
         # inside the STEM MEANING card. See _strip_leading_affix_glosses.
         stem_only, fully_stripped = _strip_leading_affix_glosses(
-            word["english"], cur, prefix_morphemes + suffix_morphemes
+            word["english"], cur, prefix_morphemes + suffix_morphemes, core_morpheme
         )
         if fully_stripped:
             word["stem_meaning"] = strip_definite_article_gloss(stem_only)

@@ -318,6 +318,141 @@ def lookup(query):
     return {"type": "none", "query": query}
 
 
+def fetch_occurrences_by_phrase(cur, tokens):
+    """
+    Finds every place in the Qur'an where `tokens` occur as a run of
+    CONSECUTIVE words (same surah/ayah, word_number increasing by exactly
+    1 per position) -- i.e. an occurrence of the whole PHRASE, as opposed
+    to looping fetch_occurrences_by_word/root over each token separately,
+    which would surface any ayah containing any ONE of the words on its
+    own, regardless of whether they ever actually sit next to each other.
+
+    Each position is matched the same way an individual word search's
+    first three stages would (surface, then stripped, then normalized --
+    see search_surface/search_stripped/search_normalized above). Lemma
+    matching is deliberately left out here: it's loose on its own, and
+    applying it across several positions in the same query would let
+    entirely unrelated ayat surface just because they share inflected
+    forms of the same roots in the same slots.
+
+    Returns a FLAT list with N rows per match (N = len(tokens)), one row
+    per token position, each carrying that position's own `surface`
+    alongside the shared surah/ayah -- not one row per match. This
+    intentionally mirrors fetch_occurrences_by_root's own shape, where
+    occurrence_list()'s existing same-surah+ayah grouping already
+    collapses consecutive same-ayah rows into a single verse card and
+    highlights every one of that card's `surface` values inside the verse
+    text; giving it N rows per match here (instead of one) is what makes
+    it highlight the whole phrase, not just one word of it, without any
+    changes to occurrence_list() itself.
+
+    Returns [] if `tokens` is empty or has fewer than 2 entries (a
+    "phrase" of zero or one word isn't a phrase-adjacency search at all).
+    """
+
+    if not tokens or len(tokens) < 2:
+        return []
+
+    n = len(tokens)
+
+    from_sql = ["words w0"]
+    for i in range(1, n):
+        from_sql.append(
+            f"JOIN words w{i} "
+            f"ON w{i}.surah = w0.surah AND w{i}.ayah = w0.ayah "
+            f"AND w{i}.word_number = w0.word_number + {i}"
+        )
+
+    where_sql = []
+    params = []
+    for i, token in enumerate(tokens):
+        where_sql.append(f"(w{i}.surface = ? OR w{i}.stripped = ? OR w{i}.normalized = ?)")
+        params.extend([token, strip_harakat(token), normalize(token)])
+
+    select_sql = ", ".join(
+        f"w{i}.surface AS surface_{i}, w{i}.word_number AS word_number_{i}"
+        for i in range(n)
+    )
+
+    cur.execute(
+        f"""
+        SELECT w0.surah, w0.ayah, v.text, t.text AS translation, {select_sql}
+        FROM {' '.join(from_sql)}
+        JOIN verses v
+            ON v.surah = w0.surah AND v.ayah = w0.ayah
+        LEFT JOIN translations t
+            ON t.surah = w0.surah AND t.ayah = w0.ayah
+           AND t.translator = 'sahih_international'
+        WHERE {' AND '.join(where_sql)}
+        ORDER BY w0.surah, w0.ayah, w0.word_number
+        """,
+        params,
+    )
+
+    occurrences = []
+    for row in cur.fetchall():
+        for i in range(n):
+            occurrences.append({
+                "surface": row[f"surface_{i}"],
+                "surah": row["surah"],
+                "ayah": row["ayah"],
+                "word_number": row[f"word_number_{i}"],
+                "text": row["text"],
+                "translation": row["translation"],
+            })
+
+    return occurrences
+
+
+# ==========================================================
+# Phrase lookup
+# ==========================================================
+
+def lookup_phrase(query):
+    """
+    Runs the exact same per-word lookup() used for a single-word search
+    over every whitespace-separated token in `query`, so a phrase gets
+    broken down word-by-word instead of being searched as one literal
+    (multi-word) string against columns that only ever hold single words.
+
+    Always returns {"type": "phrase", "query": query, "words": [...]},
+    where each entry of "words" is itself a full lookup() result dict
+    (type "word" / "root" / "camel_root" / "none") for that token, in the
+    same order the words appeared in the original phrase -- so the
+    template can render each one with the exact same word/root/none
+    breakdown it already uses for a single-word search.
+
+    Punctuation-only tokens (a stray "،" or "." split off by whitespace)
+    still go through lookup() like any other token rather than being
+    silently dropped, so the word count/order in the rendered breakdown
+    always matches the number of space-separated tokens the person typed.
+    """
+
+    query = (query or "").strip()
+
+    tokens = query.split()
+
+    conn = get_connection()
+    _register_normalize(conn)
+    cur = conn.cursor()
+    phrase_occurrences = fetch_occurrences_by_phrase(cur, tokens)
+    conn.close()
+
+    # phrase_occurrences is flat (N rows per match -- see
+    # fetch_occurrences_by_phrase's docstring), so the actual number of
+    # ayat this phrase occurs in is that length divided back down by the
+    # token count, not the raw row count itself.
+    occurrence_count = len(phrase_occurrences) // len(tokens) if tokens else 0
+
+    return {
+        "type": "phrase",
+        "query": query,
+        "words": [lookup(token) for token in tokens],
+        "phrase_occurrences": phrase_occurrences,
+        "phrase_occurrence_count": occurrence_count,
+    }
+
+
 # ==========================================================
 # Roots index (for the /roots page)
 # ==========================================================
