@@ -185,6 +185,33 @@ def _pron_suffix_from_features(features):
 _PREFIX_FEATURE_MEANINGS = {
     "INTG": ("is / are", "Interrogative particle (hamzat al-istifhām)"),
     "EQ":   ("whether", "Equivalence particle (introduces \"whether...or\")"),
+
+    # لَ as a PREF morpheme is used for at least four distinct
+    # grammatical roles in this corpus -- confirmed directly against
+    # quran.db's morphemes table, every one of them sharing the same
+    # lemma "ل" (so a plain lemma lookup against the `prefixes` table
+    # collapses all of them down to that table's single row for "ل":
+    # the ordinary preposition "for, to"):
+    #
+    #   P|PREF|LEM:ل     (2449 occurrences) -- ordinary preposition, "for, to"
+    #                                          (already resolves correctly via
+    #                                          the `prefixes` table -- untouched)
+    #   EMPH|PREF|LEM:ل  (1001 occurrences) -- emphatic lam (lām al-tawkīd),
+    #                                          e.g. لَقَدْ "certainly/indeed"
+    #   PRP|PREF|LEM:ل   ( 319 occurrences) -- purpose lam (lām al-taʿlīl),
+    #                                          e.g. لِيُحَآجُّوكُم "so that
+    #                                          they may argue with you"
+    #   IMPV|PREF|LEM:ل  (  78 occurrences) -- imperative/jussive lam
+    #                                          (lām al-amr), e.g. فَلْيَصُمْهُ
+    #                                          "then let him fast [in] it"
+    #
+    # These three tags never occur on any lemma other than "ل" among PREF
+    # morphemes, so -- unlike the وَ-prefix table below -- they don't need
+    # to be lemma-gated in `_prefix_from_features`; a bare tag match is
+    # unambiguous on its own.
+    "EMPH": ("indeed", "Emphatic particle (lām al-tawkīd, \"lam of emphasis\")"),
+    "PRP":  ("so that", "Purpose particle (lām al-taʿlīl, \"lam of purpose\")"),
+    "IMPV": ("let", "Imperative/jussive particle (lām al-amr, \"lam of command\")"),
 }
 
 # ==========================================================
