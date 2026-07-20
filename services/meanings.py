@@ -1075,6 +1075,32 @@ def _is_verb_subject_agreement_suffix(suffix_morpheme, core_morpheme):
     return suffix_features[2] in core_features
 
 
+def _strip_trailing_pronoun_gloss(text, variants):
+    """
+    Tries to strip a TRAILING " of <pronoun>" contribution off the end of
+    `text` -- e.g. the "of them" in "most of them" -- and returns
+    (new_text, matched).
+
+    This is the mirror image of what the rest of this module (and its
+    name) assumes: `_leading_gloss_variants` exists because a PREF's or
+    PRON|SUFF's own gloss usually shows up at the FRONT of a whole-word
+    English translation. But an attached pronoun suffix on a genitive/
+    elative construct -- أَكْثَرُهُمْ ("most of them"), أَكْثَرُكُم ("most
+    of you") -- naturally renders TRAILING instead, the same way English
+    always puts "of them" after the noun it modifies rather than before
+    it. Without this, a hand-curated `stem_override` like "most of them"
+    can never be confirmed fully-stripped (there's nothing to match at
+    the front), so it gets distrusted and discarded in favour of a worse
+    guess even though it's already exactly right -- see the module
+    docstring's `أَكْثَرِهِمْ` example.
+    """
+    for variant in sorted(variants, key=len, reverse=True):
+        suffix_form = " of " + variant
+        if text.endswith(suffix_form):
+            return text[: -len(suffix_form)], True
+    return text, False
+
+
 def _strip_leading_affix_glosses(text, cur, morphemes, core_morpheme=None):
     """
     Returns (stripped_text, fully_stripped).
@@ -1164,6 +1190,14 @@ def _strip_leading_affix_glosses(text, cur, morphemes, core_morpheme=None):
                 # all, so failing to match it here isn't evidence of a
                 # leak either.
                 pass
+            elif len(features.split("|")) >= 2 and features.split("|")[0] == "PRON" and features.split("|")[1] == "SUFF":
+                # An independent attached pronoun that didn't match at
+                # the front might still be sitting, entirely legitimately,
+                # at the very END of `text` instead -- see
+                # _strip_trailing_pronoun_gloss.
+                text, trailing_matched = _strip_trailing_pronoun_gloss(text, variants)
+                if not trailing_matched:
+                    fully_stripped = False
             else:
                 fully_stripped = False
 
