@@ -1,11 +1,12 @@
 """
 One-off data fix: the `lemmas` table in meanings.db has an incorrect
-meaning for إِلٰه ("a god, a deity") -- it was accidentally given the
-meaning of the unrelated, similarly-spelled word آلة ("a tool, an
-instrument, a machine"). This corrects that single row.
+meaning for جاعِل ("one who makes, places, or appoints" -- the active
+participle of جَعَلَ, "to make") -- it was accidentally given the
+meaning of the unrelated, similarly-spelled word جَائِع/جَاعَ ("hungry",
+root جوع). This corrects that single row.
 
 Usage:
-    python3 fix_ilah_meaning.py /path/to/meanings.db
+    python3 fix_jaail_meaning.py /path/to/meanings.db
 """
 
 import sqlite3
@@ -20,20 +21,20 @@ def main():
 
     cur.execute(
         "SELECT lemma, root, meaning FROM lemmas WHERE lemma = ? AND root = ?",
-        ("إِلٰه", "أله"),
+        ("جاعِل", "جعل"),
     )
     before = cur.fetchone()
     print("Before:", before)
 
     cur.execute(
         "UPDATE lemmas SET meaning = ? WHERE lemma = ? AND root = ?",
-        ("a god, a deity, a divinity", "إِلٰه", "أله"),
+        ("one who makes, places, or appoints", "جاعِل", "جعل"),
     )
     conn.commit()
 
     cur.execute(
         "SELECT lemma, root, meaning FROM lemmas WHERE lemma = ? AND root = ?",
-        ("إِلٰه", "أله"),
+        ("جاعِل", "جعل"),
     )
     after = cur.fetchone()
     print("After: ", after)

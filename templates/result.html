@@ -998,7 +998,7 @@ body {
         <input
             type="text"
             name="q"
-            placeholder="Search any Qur'anic word or phrase..."
+            placeholder="Search any Qur'anic word..."
             value="{{ query }}"
             autocomplete="off">
         <button type="submit" aria-label="Search">
@@ -1124,6 +1124,7 @@ body {
 
     {% set word_meaning = result.word.word_meaning %}
     {% set stem_meaning = result.word.stem_meaning %}
+    {% set stem_notes = result.word.stem_notes %}
     {% set root_meaning = result.word.root_meaning %}
 
     {% macro root_card() %}
@@ -1249,7 +1250,10 @@ body {
                     {% if stem_meaning %}
                     {# Inflection-aware gloss for this exact stem (CAMeL), preferred
                        over the lemma's generic citation-form dictionary sense. #}
-                    <div class="meaning-desc" style="margin-top:14px;">{{ stem_meaning }}</div>
+                    {% if stem_notes %}
+                    <div class="caption" style="margin-top:14px;">{{ stem_notes }}</div>
+                    {% endif %}
+                    <div class="meaning-desc" style="margin-top:6px;">{{ stem_meaning }}</div>
                     {% elif word_meaning and word_meaning.meaning %}
                     <div class="meaning-desc" title="{{ word_meaning.meaning }}" style="margin-top:14px;">{{ word_meaning.meaning|truncate(160) }}</div>
                     {% else %}

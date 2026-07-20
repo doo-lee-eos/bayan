@@ -1,3 +1,4 @@
+import html
 import re
 import unicodedata
 
@@ -877,6 +878,210 @@ def _get_core_morpheme(morphemes):
 
 
 # ==========================================================
+# Grammatical notes for core (non-affix) function-word particles
+# ==========================================================
+#
+# Some words in the corpus are, in their entirety, a single closed-class
+# particle rather than a noun/verb with a real lexical stem -- لَا chief
+# among them. `words.english` already gives the right per-occurrence
+# TRANSLATION for these ("not", "no", "(do) not", ...), but a bare
+# translation on its own reads as if that were لَا's one fixed meaning,
+# when it's actually at least THREE distinct grammatical roles
+# (confirmed directly against quran.db's morphemes table, all sharing
+# lemma "لا", tag "P"): categorical negation of a whole noun/genus
+# (NEG|FAM:إِنّ, e.g. لَا رَيْبَ فِيهِ "there is [absolutely] no doubt in
+# it", Al-Baqarah 2:2), plain clausal negation (bare NEG), and negating
+# an imperative (PRO, "do not ...", e.g. لَا تُفْسِدُوا۟ Al-Baqarah 2:11).
+#
+# This deliberately does NOT try to report WHICH of those three a given
+# result actually is: `search_surface` (see above) matches on bare
+# surface text with `LIMIT 1`, so every standalone لَا search lands on
+# the exact same underlying row regardless of which real occurrence
+# prompted it -- there's no reliable way to tell, from a bare-word
+# lookup alone, which of the three grammatical roles is actually in
+# play for the ayah the person has in mind. Claiming a specific one
+# anyway would often be confidently wrong. One honest, role-agnostic
+# caption applies correctly no matter which underlying row gets matched.
+_CORE_PARTICLE_NOTES = {
+    "لا": "Negation particle (lā) — a grammatical negator, not a word with one fixed meaning of its own; its best English rendering (\"not\", \"no\", \"never\", \"do not\"...) depends on what it's negating in context.",
+}
+
+
+def _core_particle_notes(core_morpheme):
+    """A short grammatical caption for a core (non-affix) morpheme that's
+    really a closed-class function-word particle rather than a word with
+    its own independent lexical stem -- or None if this morpheme's lemma
+    isn't one of the recognized cases (see `_CORE_PARTICLE_NOTES`
+    above)."""
+
+    if not core_morpheme:
+        return None
+
+    return _CORE_PARTICLE_NOTES.get(_meaning_key(core_morpheme.get("lemma")))
+
+
+# ==========================================================
+# Fused-in grammatical markers: subject-agreement prefix, tanwīn
+# ==========================================================
+#
+# Two Arabic grammatical markers never get their own morpheme row in this
+# corpus at all -- they're fused into one existing morpheme's own surface
+# diacritics, unlike وَ/فَ/لَ/ال (genuinely separable PREF morphemes) or an
+# attached pronoun (a genuinely separable SUFF morpheme):
+#
+#   - An IMPERFECT verb's subject is marked by a single fused prefix
+#     letter -- أ (I), نَ (we), تَ (you / she), يَ (he/it/they) -- confirmed
+#     directly against quran.db: يَقُولُ is ONE morpheme (tag V, features
+#     "IMPF|VF:1|ROOT:قول|LEM:قالَ|3MS|MOOD:IND"), not a separate ي
+#     morpheme plus a قُولُ stem.
+#   - Tanwīn (ً/ٌ/ٍ) marks an indefinite noun's case at the very end of
+#     its own surface -- confirmed the same way: عَدُوٌّ is ONE morpheme
+#     (tag N, features "ROOT:عدو|LEM:عَدُوّ|M|INDEF|NOM").
+#
+# Both are still fully derivable, though -- the corpus already tags the
+# person/gender/number (for the verb) or indefiniteness+case (for the
+# noun) on that SAME morpheme, so which letter is doing the marking, and
+# what it means, isn't a guess. What's different is the presentation:
+# since neither is a separable clitic the way a real PREF/SUFF is, they
+# don't get their own PREFIX/SUFFIX-style card (that would visually claim
+# a separability that isn't there) -- just a small tooltip on the exact
+# letter/mark itself, right inside the ORIGINAL WORD's MAIN BODY segment.
+
+_SUBJECT_MARKER_MEANINGS = {
+    "1S":  "I",
+    "2MS": "you",
+    "2FS": "you",
+    "3MS": "he / it",
+    "3FS": "she / it",
+    "1P":  "we",
+    "2MP": "you all",
+    "2FP": "you all",
+    "3MP": "they",
+    "3FP": "they",
+    "2D":  "you two",
+    "3D":  "they two",
+    "3MD": "they two",
+    "3FD": "they two",
+}
+
+
+def _verb_subject_marker(core_morpheme):
+    """
+    Returns {"letter": ..., "meaning": ..., "notes": ...} for the fused
+    subject-agreement prefix letter on an IMPERFECT verb's own surface,
+    or None if this morpheme isn't an imperfect verb (see module note
+    above). `letter` is always the morpheme's own first character --
+    never inferred from the letter alone, since ت is genuinely ambiguous
+    between 2MS and 3FS on its own; the corpus's own person/gender/number
+    tag on this exact morpheme resolves that, not a guess.
+    """
+    if not core_morpheme:
+        return None
+    if (core_morpheme.get("tag") or "").upper() != "V":
+        return None
+
+    features = (core_morpheme.get("features") or "").split("|")
+    if "IMPF" not in features:
+        return None
+
+    surface = core_morpheme.get("surface") or ""
+    if not surface:
+        return None
+
+    person_tag = next((f for f in features if f in _SUBJECT_MARKER_MEANINGS), None)
+    if not person_tag:
+        return None
+
+    meaning = _SUBJECT_MARKER_MEANINGS[person_tag]
+
+    return {
+        "letter": surface[0],
+        "meaning": meaning,
+        "notes": "Subject-agreement prefix (\u201c{}\u201d) fused into this imperfect verb \u2014 not a separate word.".format(meaning),
+    }
+
+
+_TANWIN_MARKS = {
+    "\u064B": "an",  # fathatan
+    "\u064C": "un",  # dammatan
+    "\u064D": "in",  # kasratan
+}
+
+_TANWIN_CASE_LABELS = {
+    "NOM": "nominative",
+    "ACC": "accusative",
+    "GEN": "genitive",
+}
+
+
+def _tanwin_badge(core_morpheme):
+    """
+    Returns {"letter": ..., "meaning": ..., "notes": ...} for a trailing
+    tanwīn mark (ً/ٌ/ٍ) on an indefinite noun's own surface, or None if
+    this morpheme isn't an indefinite noun ending in one (see module note
+    above).
+    """
+    if not core_morpheme:
+        return None
+
+    features = (core_morpheme.get("features") or "").split("|")
+    if "INDEF" not in features:
+        return None
+
+    surface = core_morpheme.get("surface") or ""
+    if not surface or surface[-1] not in _TANWIN_MARKS:
+        return None
+
+    case_tag = next((f for f in features if f in _TANWIN_CASE_LABELS), None)
+    case_label = _TANWIN_CASE_LABELS.get(case_tag)
+
+    notes = "Tanwīn (nunation) \u2014 marks this noun as indefinite"
+    if case_label:
+        notes += " and " + case_label
+    notes += "."
+
+    return {"letter": surface[-1], "meaning": "tanwīn", "notes": notes}
+
+
+def _annotate_main_segment(core_surface, subject_marker, tanwin_badge):
+    """
+    Builds an HTML string for the ORIGINAL WORD hero's MAIN BODY segment
+    with the fused subject-marker letter and/or trailing tanwīn mark each
+    wrapped in their own `<span title="...">`, so hovering explains what
+    that one letter/diacritic is doing -- without a separate card
+    implying it's removable the way a real prefix/suffix is.
+
+    Returns None (caller should fall back to plain, unannotated text) if
+    `core_surface` is empty or neither marker actually applies here.
+    """
+    if not core_surface or (not subject_marker and not tanwin_badge):
+        return None
+
+    body = core_surface
+    prefix_html = ""
+    suffix_html = ""
+
+    if subject_marker and body.startswith(subject_marker["letter"]):
+        prefix_html = '<span class="fused-marker" title="{}">{}</span>'.format(
+            html.escape(subject_marker["notes"], quote=True),
+            html.escape(subject_marker["letter"]),
+        )
+        body = body[len(subject_marker["letter"]):]
+
+    if tanwin_badge and body.endswith(tanwin_badge["letter"]):
+        suffix_html = '<span class="fused-marker" title="{}">{}</span>'.format(
+            html.escape(tanwin_badge["notes"], quote=True),
+            html.escape(tanwin_badge["letter"]),
+        )
+        body = body[: -len(tanwin_badge["letter"])]
+
+    if not prefix_html and not suffix_html:
+        return None
+
+    return prefix_html + html.escape(body) + suffix_html
+
+
+# ==========================================================
 # Stripping a word's own affix glosses out of a whole-surface gloss
 # ==========================================================
 #
@@ -1309,6 +1514,25 @@ def attach_meanings(result):
     word = result["word"]
     word["root_meaning"] = get_root_meaning(cur, word.get("root"))
 
+    # Compute the same short-gloss precedence fetch_all_roots() uses for
+    # the /roots index page (short_override -> short_meaning, if
+    # short_confident -> else None), and attach it as "short" directly on
+    # word["root_meaning"] itself. Without this, root_meaning is just the
+    # bare `roots` table row (short_override/short_meaning/short_confident
+    # as separate columns, no "short" key computed from them) -- so a
+    # template reading word.root_meaning.short the same way the roots-index
+    # template does finds nothing, and the ROOT card silently falls back to
+    # showing only the full classical definition with no short gloss above
+    # it. Computed once here so both this and the word_meaning fallback
+    # below can reuse it.
+    root_meaning = word["root_meaning"]
+    root_short = None
+    if root_meaning:
+        root_short = root_meaning.get("short_override") or (
+            root_meaning.get("short_meaning") if root_meaning.get("short_confident") else None
+        )
+        root_meaning["short"] = root_short
+
     # `lemmas.meaning` is the right source for a short lemma-level gloss --
     # but a handful of rows hold a leftover lexicographic cross-reference
     # marker ("Synonym", "See") instead of an actual translation (see
@@ -1325,15 +1549,10 @@ def attach_meanings(result):
     if lemma_meaning and not _is_junk_lemma_meaning(lemma_meaning.get("meaning")):
         word_meaning = lemma_meaning
     else:
-        root_meaning = word["root_meaning"]
-        short = None
-        if root_meaning:
-            short = root_meaning.get("short_override") or (
-                root_meaning.get("short_meaning") if root_meaning.get("short_confident") else None
-            )
-        word_meaning = {"meaning": short, "notes": None} if short else None
+        word_meaning = {"meaning": root_short, "notes": None} if root_short else None
 
     word["word_meaning"] = word_meaning
+
 
     # Word family (every distinct lemma sharing this word's root, see
     # search.fetch_word_family_by_root) -- reuses the meanings.db
@@ -1453,6 +1672,14 @@ def attach_meanings(result):
     else:
         word["stem_meaning"] = _camel_guess_stem_meaning(result, word, cur, cached_stem_meaning)
 
+    word["stem_notes"] = _core_particle_notes(core_morpheme)
+
+    subject_marker = _verb_subject_marker(core_morpheme)
+    tanwin_badge = _tanwin_badge(core_morpheme)
+    result["main_segment_html"] = _annotate_main_segment(
+        (core_morpheme or {}).get("surface"), subject_marker, tanwin_badge
+    )
+
     for m in prefix_morphemes:
         m["meaning"] = get_prefix_meaning(cur, m)
     for m in suffix_morphemes:
@@ -1493,6 +1720,11 @@ def attach_family_meanings(result):
     quran_cur = quran_conn.cursor()
 
     root_meaning = get_root_meaning(cur, result.get("root"))
+    if root_meaning:
+        root_meaning["short"] = root_meaning.get("short_override") or (
+            root_meaning.get("short_meaning") if root_meaning.get("short_confident") else None
+        )
+    result["root_meaning"] = root_meaning
 
     for entry in family:
         entry["meaning"] = _meaning_for_family_lemma(

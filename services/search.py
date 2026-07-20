@@ -187,13 +187,28 @@ def search_normalized(cur, query):
 
 
 def search_lemma(cur, query):
-    """Compares NORMALIZED query against the NORMALIZED lemma column."""
+    """
+    Compares NORMALIZED query against the NORMALIZED lemma column.
+
+    Guards against the empty string: NORMALIZE() (registered in
+    _register_normalize) maps a NULL lemma to "", and normalize() maps a
+    punctuation-only/diacritic-only query (e.g. a bare waqf mark like
+    "ۚ") to "" as well. Without this guard, WHERE NORMALIZE(lemma) = ''
+    would match *any* row with no lemma recorded, and -- with no ORDER BY
+    -- silently return whichever such row happens to come first in table
+    order, rather than reporting "no match" for what is not actually a
+    word.
+    """
+    normalized_query = normalize(query)
+    if not normalized_query:
+        return None
+
     cur.execute("""
         SELECT *
         FROM words
         WHERE NORMALIZE(lemma) = ?
         LIMIT 1
-    """, (normalize(query),))
+    """, (normalized_query,))
     return cur.fetchone()
 
 
@@ -422,15 +437,41 @@ def lookup_phrase(query):
     template can render each one with the exact same word/root/none
     breakdown it already uses for a single-word search.
 
-    Punctuation-only tokens (a stray "،" or "." split off by whitespace)
-    still go through lookup() like any other token rather than being
-    silently dropped, so the word count/order in the rendered breakdown
-    always matches the number of space-separated tokens the person typed.
+    Tokens that are punctuation/annotation-only once harakat is stripped
+    (a stray "،" or a waqf/pause mark like "ۚ" split off by whitespace)
+    are dropped before lookup() runs, so the word count/order in the
+    rendered breakdown matches the number of actual *words* the person
+    typed -- not the raw number of whitespace-separated pieces, which can
+    include a mark that isn't a word at all.
+
+    If, after dropping those non-word tokens, fewer than 2 real words are
+    left, this ISN'T a phrase -- it's a single word (optionally trailed
+    by a pause mark, e.g. "وَٱلْـَٔاخِرَةَ ۚ"), or nothing at all. Wrapping
+    a single word in {"type": "phrase", "words": [...]} would still make
+    the template render the multi-word "phrase breakdown" UI around it
+    (just showing "1 of 1" instead of "1 of 2"), which is the wrong view
+    for what the person actually typed. So in that case this delegates
+    straight to lookup() and returns ITS result type ("word" / "root" /
+    "camel_root" / "none") instead, unwrapped -- same shape a plain
+    single-word search would return, regardless of the stray whitespace
+    or mark that was trimmed off. "phrase" is now only ever returned when
+    there are genuinely 2+ real words being searched as a run.
     """
 
     query = (query or "").strip()
 
-    tokens = query.split()
+    # Split on whitespace, then drop any token that has no letters left
+    # once harakat/waqf marks are stripped (e.g. a bare pause mark like
+    # "ۚ" pasted with its conventional leading space -- see
+    # strip_harakat()'s docstring). Such tokens aren't words at all, so
+    # running them through lookup() only invites a spurious match (see
+    # search_lemma above); dropping them here keeps the word count/order
+    # in sync with what a person would actually call "the words" of the
+    # phrase.
+    tokens = [t for t in query.split() if strip_harakat(t)]
+
+    if len(tokens) < 2:
+        return lookup(tokens[0]) if tokens else {"type": "none", "query": query}
 
     conn = get_connection()
     _register_normalize(conn)
