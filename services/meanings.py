@@ -134,6 +134,62 @@ _PRON_SUFFIX_STRIP_FORMS = {
 }
 
 
+# ==========================================================
+# Non-pronoun suffix disambiguation via `features`
+# ==========================================================
+#
+# ها as a SUFF morpheme is used for two entirely distinct grammatical
+# roles -- confirmed directly against quran.db's morphemes table:
+#   PRON|SUFF|3FS   -- the attached object/possessive pronoun "her/it"
+#                       (e.g. بَيْتُهَا, "her house") -- already handled
+#                       correctly above by `_pron_suffix_from_features`.
+#   ATT|SUFF|LEM:ه  (154 occurrences) -- hā' al-tanbīh (the "particle of
+#                       attention"), which attaches to أَيّ/أَيَّة
+#                       specifically in vocative address (يَٰٓأَيُّهَا,
+#                       "O you...", and أَيَّتُهَا). It is NOT a pronoun
+#                       and does not mean "her/it" -- it contributes no
+#                       independent meaning of its own, the way its
+#                       PREF-morpheme counterpart on demonstratives
+#                       (هَٰذَا, هَٰٓؤُلَآءِ -- already correctly glossed
+#                       "lo, behold" in the `prefixes` table) doesn't
+#                       either.
+#
+# `suffixes` table row keyed on stripped "ها" can only ever hold ONE
+# meaning -- the pronoun sense -- so without this check, every one of
+# those 154 attention-particle occurrences silently gets glossed as
+# "her/it" instead.
+#
+# Similarly, م as a SUFF morpheme (VOC|SUFF|LEM:م, 5 occurrences) is the
+# vocative particle substituting for a separate يَا, as in ٱللَّهُمَّ
+# ("O Allah") -- unrelated to any pronoun sense of م, and with no row at
+# all in the `suffixes` table, so it previously surfaced no gloss.
+_ATT_VOC_SUFFIX_MEANINGS = {
+    "ATT": ("(no separate meaning)", "Hā' al-tanbīh (particle of attention) -- attaches to أَيّ/أَيَّة in vocative address; not the attached object/possessive pronoun \u201cها\u201d (\"her/it\")."),
+    "VOC": ("O", "Vocative particle -- substitutes for a separate يَا, e.g. in ٱللَّهُمَّ (\"O Allah\")."),
+}
+
+
+def _att_voc_suffix_from_features(features):
+    """Returns a meaning dict derived directly from the morpheme's own
+    `features` tag for the closed set of non-pronoun ها/م suffix roles
+    that plain surface/stripped text can't disambiguate from the
+    pronoun senses (see `_ATT_VOC_SUFFIX_MEANINGS` above), or None if
+    `features` isn't one of those recognized tags -- in which case the
+    caller falls through to `_pron_suffix_from_features` and then the
+    ordinary DB lookup."""
+
+    if not features:
+        return None
+
+    tag = features.split("|")[0]
+    entry = _ATT_VOC_SUFFIX_MEANINGS.get(tag)
+    if not entry:
+        return None
+
+    meaning, notes = entry
+    return {"suffix": None, "meaning": meaning, "notes": notes, "stripped": None}
+
+
 def _pron_suffix_from_features(features):
     """Returns a meaning dict derived directly from the morpheme's own
     `features` tag for the closed set of attached-pronoun suffixes, or
@@ -186,6 +242,22 @@ def _pron_suffix_from_features(features):
 _PREFIX_FEATURE_MEANINGS = {
     "INTG": ("is / are", "Interrogative particle (hamzat al-istifhām)"),
     "EQ":   ("whether", "Equivalence particle (introduces \"whether...or\")"),
+
+    # ي as a PREF morpheme is likewise used for two entirely distinct
+    # grammatical roles -- confirmed directly against quran.db's
+    # morphemes table:
+    #   VOC|PREF|LEM:ي  (361 occurrences) -- the vocative particle "yā"
+    #                                         ("O..."), e.g. the ي in
+    #                                         يَٰٓأَيُّهَا ("O you...")
+    # NEITHER of these is an imperfect verb's own subject-agreement
+    # prefix ("he ...", as in يَفْعَلُ) -- that sense, like the "أ" case
+    # above, lives inside the verb's own stem morpheme in this corpus's
+    # schema and is never split out as its own PREF morpheme. But the
+    # `prefixes` table's one curated row for stripped "ي" is "he / 3rd
+    # person masculine imperfect", clearly meant for that verb-agreement
+    # sense -- so, exactly as with "أ", it was winning by default on
+    # every one of those 361 vocative occurrences too.
+    "VOC":  ("O", "Vocative particle (yā al-nidā') -- calls out to someone/something; not the imperfect-verb subject-agreement \u201cي\u201d."),
 
     # لَ as a PREF morpheme is used for at least four distinct
     # grammatical roles in this corpus -- confirmed directly against
@@ -316,11 +388,18 @@ def get_suffix_meaning(cur, morpheme):
     Attached-pronoun suffixes (features starting "PRON|SUFF|") are
     resolved from `features` directly first -- see
     `_pron_suffix_from_features` for why surface/stripped text alone
-    can't be trusted for this suffix family."""
+    can't be trusted for this suffix family. The non-pronoun ها/م
+    suffixes (features starting "ATT|" or "VOC|") are resolved from
+    `features` next, for the same reason -- see
+    `_att_voc_suffix_from_features`."""
 
     from_features = _pron_suffix_from_features(morpheme.get("features"))
     if from_features:
         return from_features
+
+    from_att_voc = _att_voc_suffix_from_features(morpheme.get("features"))
+    if from_att_voc:
+        return from_att_voc
 
     for candidate in (morpheme.get("surface"), morpheme.get("lemma")):
         key = _meaning_key(candidate)
@@ -658,6 +737,32 @@ def get_root_meaning(cur, root):
     cur.execute("SELECT * FROM roots WHERE stripped = ?", (key,))
     row = cur.fetchone()
     return dict(row) if row else None
+
+
+def get_names_of_allah_for_root(cur, root):
+    """
+    Every Name of Allah (names_of_allah table) derived from `root`, e.g.
+    root رحم -> Ar-Rahman, Ar-Rahim.
+
+    names_of_allah.root is hand-curated undiacritized text, same as
+    roots.root/roots.stripped -- but unlike get_root_meaning() this
+    can't lean on the NORMALIZE() SQL function (only registered on the
+    quran.db connection in search.py, not on this meanings.db cursor),
+    so both sides are folded down with _meaning_key() in Python instead.
+    The table only has 99 rows, so filtering client-side after one
+    SELECT is cheap and avoids a second sqlite connection just to
+    register a function.
+
+    Returns [] (never None) so templates can do a plain truthiness/
+    length check without a null guard.
+    """
+    key = _meaning_key(root)
+    if not key:
+        return []
+    cur.execute("SELECT number, arabic, transliteration, meaning, root, notes FROM names_of_allah")
+    matches = [dict(row) for row in cur.fetchall() if _meaning_key(row["root"]) == key]
+    matches.sort(key=lambda r: r["number"])
+    return matches
 
 
 def get_lemma_meaning(cur, lemma):
@@ -1553,6 +1658,10 @@ def attach_meanings(result):
 
     word["word_meaning"] = word_meaning
 
+    # Any of the 99 Names of Allah built from this word's root (e.g. root
+    # رحم surfaces Ar-Rahman and Ar-Rahim) -- shown alongside the word
+    # family in the ROOT card. See get_names_of_allah_for_root.
+    result["names_of_allah"] = get_names_of_allah_for_root(cur, word.get("root"))
 
     # Word family (every distinct lemma sharing this word's root, see
     # search.fetch_word_family_by_root) -- reuses the meanings.db
@@ -1709,6 +1818,13 @@ def attach_family_meanings(result):
     family = result.get("word_family")
     if not family:
         result["word_family"] = []
+        # A root with literally no word family shouldn't happen for a
+        # Name of Allah's root (its root necessarily occurs in the
+        # Qur'an), but check anyway rather than silently skipping it --
+        # cheap enough to open the connection just for this one lookup.
+        conn = get_meanings_connection()
+        result["names_of_allah"] = get_names_of_allah_for_root(conn.cursor(), result.get("root"))
+        conn.close()
         return result
 
     conn = get_meanings_connection()
@@ -1725,6 +1841,11 @@ def attach_family_meanings(result):
             root_meaning.get("short_meaning") if root_meaning.get("short_confident") else None
         )
     result["root_meaning"] = root_meaning
+
+    # Any of the 99 Names of Allah built from this root -- see
+    # get_names_of_allah_for_root and the matching attach_meanings()
+    # branch above (this is the standalone root-page equivalent).
+    result["names_of_allah"] = get_names_of_allah_for_root(cur, result.get("root"))
 
     for entry in family:
         entry["meaning"] = _meaning_for_family_lemma(

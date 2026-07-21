@@ -489,6 +489,43 @@ body {
     text-transform: uppercase;
 }
 
+.family-card.name-of-allah {
+    background: linear-gradient(165deg, rgba(184,134,47,0.12), rgba(184,134,47,0.04));
+    border: 1px solid rgba(184,134,47,0.45);
+    box-shadow: 0 0 0 1px rgba(184,134,47,0.08) inset;
+    position: relative;
+    padding-top: 30px;
+}
+
+.family-card.name-of-allah .name-badge {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(155deg, var(--gold), #8a651f);
+    color: #fff8ea;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-align: center;
+    padding: 4px 6px;
+    border-radius: 12px 12px 0 0;
+    text-transform: uppercase;
+}
+
+.family-card.name-of-allah .lemma {
+    color: #8a651f;
+}
+
+.family-card.name-of-allah .transliteration {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 12px;
+    color: var(--gold);
+    margin-top: 4px;
+    text-align: right;
+}
+
 .family-card .gloss {
     font-family: var(--font-serif);
     font-style: italic;
@@ -890,13 +927,27 @@ body {
     {{- ns.t -}}
 {%- endmacro %}
 
-{% macro word_family_grid(word_family) %}
+{% macro word_family_grid(word_family, names_of_allah=none) %}
 {# One card per distinct lemma sharing the root (search.fetch_word_family_by_root),
    each with its part of speech and its own gloss -- distinct from
    occurrence_list below, which is one row per AYAH rather than one card
-   per derived FORM. #}
+   per derived FORM.
+
+   names_of_allah (meanings.get_names_of_allah_for_root) renders first,
+   as its own visually-distinct gold "NAME OF ALLAH" card -- same grid,
+   same card shape, so it sits alongside the rest of the word family
+   rather than in a separate section, but styled to stand apart given
+   its significance. #}
 {% set pos_labels = {"N": "Noun", "V": "Verb"} %}
 <div class="family-grid">
+{% for name in (names_of_allah or []) %}
+    <a class="family-card name-of-allah" href="{{ url_for('search', q=name.arabic) }}">
+        <div class="name-badge">Name of Allah</div>
+        <div class="lemma">{{ name.arabic }}</div>
+        <div class="transliteration">{{ name.transliteration }}</div>
+        <div class="gloss">{{ name.meaning }}</div>
+    </a>
+{% endfor %}
 {% for entry in word_family %}
     {% if entry.meaning %}
     <a class="family-card" href="{{ url_for('search', q=entry.lemma) }}">
@@ -1278,13 +1329,14 @@ body {
     </div>
 
     {% set family_with_meaning = result.word_family|selectattr("meaning")|list %}
-    {% if result.word.root and family_with_meaning %}
+    {% set allah_names = result.names_of_allah or [] %}
+    {% if result.word.root and (family_with_meaning or allah_names) %}
     <div class="corpus">
         <div class="corpus-header">
             <div class="corpus-title">WORD FAMILY OF THE ROOT {{ result.root or result.word.root }}</div>
-            <div class="corpus-count"><strong>{{ family_with_meaning|length }}</strong> {{ "form" if family_with_meaning|length == 1 else "forms" }}</div>
+            <div class="corpus-count"><strong>{{ family_with_meaning|length + allah_names|length }}</strong> {{ "form" if (family_with_meaning|length + allah_names|length) == 1 else "forms" }}</div>
         </div>
-        {{ word_family_grid(family_with_meaning) }}
+        {{ word_family_grid(family_with_meaning, allah_names) }}
     </div>
     {% endif %}
 
@@ -1329,13 +1381,14 @@ body {
     </div>
 
     {% set family_with_meaning = result.word_family|selectattr("meaning")|list %}
-    {% if family_with_meaning %}
+    {% set allah_names = result.names_of_allah or [] %}
+    {% if family_with_meaning or allah_names %}
     <div class="corpus">
         <div class="corpus-header">
             <div class="corpus-title">WORD FAMILY OF THE ROOT {{ result.root }}</div>
-            <div class="corpus-count"><strong>{{ family_with_meaning|length }}</strong> {{ "form" if family_with_meaning|length == 1 else "forms" }}</div>
+            <div class="corpus-count"><strong>{{ family_with_meaning|length + allah_names|length }}</strong> {{ "form" if (family_with_meaning|length + allah_names|length) == 1 else "forms" }}</div>
         </div>
-        {{ word_family_grid(family_with_meaning) }}
+        {{ word_family_grid(family_with_meaning, allah_names) }}
     </div>
     {% endif %}
 

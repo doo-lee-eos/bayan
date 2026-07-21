@@ -545,4 +545,4 @@ def fetch_all_roots():
             "occurrence_count": counts.get(r["root"], 0),
         })
 
-    return roots
+    return roots    
