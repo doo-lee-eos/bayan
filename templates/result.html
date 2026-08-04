@@ -8,6 +8,7 @@
     /* Warm parchment / desert palette, matching the home page's hero. */
     --bg: #f6ecd8;
     --panel: rgba(94,66,34,0.045);
+    --panel-solid: #fdf8ee;
     --border: rgba(94,66,34,0.16);
     --line: rgba(94,66,34,0.24);
     --text: #2e2013;
@@ -15,6 +16,7 @@
     --teal: #3f8a76;
     --gold: #b8862f;
     --blue: #b1573c;
+    --slate: #3f5a8a;
     --font-serif: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
     --font-arabic: "Amiri", "Traditional Arabic", serif;
 }
@@ -165,6 +167,125 @@ body {
 .segment.suffix { --seg-color: var(--gold); color: var(--gold); }
 .segment.main   { --seg-color: rgba(94,66,34,0.3); color: var(--text); }
 .segment.prefix { --seg-color: var(--teal); color: var(--teal); }
+
+/* A subject-agreement letter (يَ/تَ/نَ/أَ) fused INTO the stem itself,
+   or a trailing tanwīn mark -- not a separate morpheme, so it gets no
+   card of its own in the hero row the way a genuinely separable clitic
+   does. Instead, interacting with it pops a small explanatory card off
+   the letter itself (see .fused-popover below). Colored (not
+   underlined): border-bottom/text-decoration on a joined, cursive
+   Arabic glyph doesn't reliably track the letter's actual visual
+   position once shaping and connecting strokes are involved, so a
+   plain color change is the more robust cue here. */
+.segment .fused-marker {
+    color: var(--slate);
+    cursor: pointer;
+    outline: none;
+    border-radius: 2px;
+    transition: background .12s ease;
+}
+.segment .fused-marker:hover,
+.segment .fused-marker:focus-visible,
+.segment .fused-marker.is-active {
+    background: rgba(63,90,138,0.14);
+}
+
+/* One-time hint under the hero word, shown only when at least one
+   fused marker is actually present (see word-row markup below) --
+   tells first-time visitors what the colored letter is for, since
+   color alone doesn't say "tap me" the way an underline usually would,
+   and hover means nothing on a phone. */
+.fused-hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 10px;
+    text-align: center;
+}
+.fused-hint .fused-hint-sample {
+    color: var(--slate);
+    font-weight: 700;
+}
+
+/* The popover itself: a single shared element, moved and filled by JS
+   (see the script at the bottom of the page) rather than one per
+   letter -- keeps positioning/overflow-clamping logic in one place no
+   matter how many fused markers a word has. Rendered as position:fixed
+   so it can float above the hero row regardless of that row's own
+   overflow/centering, and flipped from "top" to "bottom" placement by
+   JS when there isn't room above. Uses --panel-solid (opaque), not
+   --panel (a ~4% tint meant for panels sitting flat on the page) --
+   translucent would let whatever's underneath (search bar, other text)
+   show through and read as clutter. */
+.fused-popover {
+    position: fixed;
+    z-index: 60;
+    width: 240px;
+    max-width: calc(100vw - 24px);
+    background: var(--panel-solid);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px 16px;
+    box-shadow: 0 16px 40px -8px rgba(28,20,12,0.45);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(4px);
+    transition: opacity .14s ease, transform .14s ease, visibility .14s;
+    pointer-events: none;
+    direction: ltr;
+    text-align: left;
+}
+.fused-popover.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+.fused-popover .fused-popover-kind {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--slate);
+    margin-bottom: 8px;
+}
+.fused-popover .fused-popover-letter {
+    font-family: var(--font-arabic);
+    font-size: 26px;
+    color: var(--text);
+    margin-bottom: 8px;
+    unicode-bidi: isolate;
+}
+.fused-popover .fused-popover-notes {
+    font-family: var(--font-serif);
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--text);
+}
+/* Small triangular pointer connecting the card back to the letter it
+   explains. JS toggles .point-up / .point-down depending on whether
+   the card ended up placed below or above the letter, and sets
+   --fused-arrow-left so the arrow tracks the letter's real position
+   even when the card itself gets clamped sideways to stay on-screen. */
+.fused-popover::after {
+    content: "";
+    position: absolute;
+    left: var(--fused-arrow-left, 20px);
+    width: 10px;
+    height: 10px;
+    background: var(--panel-solid);
+    border: 1px solid var(--border);
+}
+.fused-popover.point-up::after {
+    top: -6px;
+    border-right: none;
+    border-bottom: none;
+    transform: rotate(45deg);
+}
+.fused-popover.point-down::after {
+    bottom: -6px;
+    border-left: none;
+    border-top: none;
+    transform: rotate(45deg);
+}
 
 .seg-label {
     padding: 0 26px;
@@ -1110,11 +1231,40 @@ body {
     <div class="word-row">
         {% for seg in segments %}
         <div class="seg-block {{ seg.role }}">
+            {# main_segment_html (meanings.attach_meanings) annotates a
+               fused, non-removable letter within the stem itself -- a
+               verb's subject-agreement prefix (يَ/تَ/نَ/أَ, "he/you/
+               we/I do X") -- and/or a trailing tanwīn mark. These
+               aren't separate morphemes CAMeL or this corpus's own
+               tagging split out, so they don't get a card of their own
+               the way a real PREF/SUFF clitic does -- just a dotted
+               letter right inside the MAIN BODY box that pops a small
+               explanatory card when tapped/clicked/hovered (see
+               .fused-popover). Only applies when this segment is a
+               single, unmerged main morpheme (matching what
+               main_segment_html was actually built from); a merged
+               multi-morpheme main run falls back to the plain joined
+               surface below. #}
+            {% if seg.role == 'main' and seg.parts|length == 1 and result.main_segment_html %}
+            <div class="segment {{ seg.role }}">{{ result.main_segment_html|safe }}</div>
+            {% else %}
             <div class="segment {{ seg.role }}">{{ seg.parts|map(attribute='surface')|join('') }}</div>
+            {% endif %}
             <div class="seg-label {{ seg.role }}">{{ 'MAIN BODY' if seg.role == 'main' else (seg.role|upper ~ ("ES" if seg.parts|length > 1 else "")) }}</div>
         </div>
         {% endfor %}
     </div>
+
+    {# Told, not just shown: a plain color change on a fused letter is a
+       fairly quiet signal to be someone's first introduction to "this
+       is tappable" -- especially since hover means nothing on a phone.
+       A plain string check on the already-rendered HTML (rather than
+       threading a new boolean through result.*) is enough here, since
+       main_segment_html only ever contains a fused-marker span when one
+       actually applies to this word. #}
+    {% if result.main_segment_html and 'fused-marker' in result.main_segment_html %}
+    <div class="fused-hint">Tap the <span class="fused-hint-sample">coloured letter</span> in the word above for what it's doing</div>
+    {% endif %}
 
     {# Fan of arrows below the hero word, one pointing down at each card
        actually rendered in .meaning-row (suffix left / stem center /
@@ -1465,5 +1615,104 @@ body {
 {% endif %}
 
 </div>
+
+<div class="fused-popover" id="fusedPopover" role="tooltip"></div>
+
+<script>
+(function () {
+    var popover = document.getElementById('fusedPopover');
+    if (!popover) { return; }
+
+    var activeMarker = null;
+
+    function closePopover() {
+        popover.classList.remove('is-open');
+        if (activeMarker) {
+            activeMarker.classList.remove('is-active');
+            activeMarker = null;
+        }
+    }
+
+    function openPopover(marker) {
+        activeMarker = marker;
+        marker.classList.add('is-active');
+
+        popover.innerHTML =
+            '<div class="fused-popover-kind">' + (marker.dataset.fusedKind || 'FUSED MARKER') + '</div>' +
+            '<div class="fused-popover-letter">' + marker.textContent + '</div>' +
+            '<div class="fused-popover-notes">' + (marker.dataset.fusedNotes || '') + '</div>';
+
+        // Show it first (off-screen-safe defaults) so we can measure it,
+        // then position relative to the letter, flipping from above to
+        // below when there isn't enough room above, and clamping
+        // horizontally so it never runs off a narrow (mobile) viewport.
+        popover.classList.add('is-open');
+        popover.classList.remove('point-up', 'point-down');
+
+        var pad = 10;
+        var markerRect = marker.getBoundingClientRect();
+        var popRect = popover.getBoundingClientRect();
+
+        var placeAbove = markerRect.top - popRect.height - pad > 0;
+
+        var top = placeAbove
+            ? markerRect.top - popRect.height - pad
+            : markerRect.bottom + pad;
+        popover.classList.add(placeAbove ? 'point-down' : 'point-up');
+
+        var left = markerRect.left + (markerRect.width / 2) - (popRect.width / 2);
+        var minLeft = 12;
+        var maxLeft = window.innerWidth - popRect.width - 12;
+        left = Math.max(minLeft, Math.min(left, maxLeft));
+
+        popover.style.top = top + 'px';
+        popover.style.left = left + 'px';
+
+        // Point the little triangle at the letter's actual center, not
+        // the popover's own center, since the card may have been
+        // clamped sideways away from that center.
+        var arrowLeft = (markerRect.left + markerRect.width / 2) - left - 5;
+        arrowLeft = Math.max(12, Math.min(arrowLeft, popRect.width - 22));
+        popover.style.setProperty('--fused-arrow-left', arrowLeft + 'px');
+    }
+
+    document.addEventListener('click', function (e) {
+        var marker = e.target.closest && e.target.closest('.fused-marker');
+        if (marker) {
+            if (activeMarker === marker) {
+                closePopover();
+            } else {
+                openPopover(marker);
+            }
+            e.stopPropagation();
+            return;
+        }
+        if (!e.target.closest('.fused-popover')) {
+            closePopover();
+        }
+    });
+
+    document.addEventListener('mouseover', function (e) {
+        var marker = e.target.closest && e.target.closest('.fused-marker');
+        if (marker && marker !== activeMarker) {
+            openPopover(marker);
+        }
+    });
+
+    document.addEventListener('focusin', function (e) {
+        var marker = e.target.closest && e.target.closest('.fused-marker');
+        if (marker && marker !== activeMarker) {
+            openPopover(marker);
+        }
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { closePopover(); }
+    });
+
+    window.addEventListener('scroll', closePopover, true);
+    window.addEventListener('resize', closePopover);
+})();
+</script>
 
 {% endblock %}

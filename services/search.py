@@ -460,15 +460,26 @@ def lookup_phrase(query):
 
     query = (query or "").strip()
 
-    # Split on whitespace, then drop any token that has no letters left
-    # once harakat/waqf marks are stripped (e.g. a bare pause mark like
-    # "ۚ" pasted with its conventional leading space -- see
-    # strip_harakat()'s docstring). Such tokens aren't words at all, so
-    # running them through lookup() only invites a spurious match (see
-    # search_lemma above); dropping them here keeps the word count/order
-    # in sync with what a person would actually call "the words" of the
-    # phrase.
-    tokens = [t for t in query.split() if strip_harakat(t)]
+    # Split on whitespace, then drop any token that has no LETTERS left
+    # once harakat/waqf marks/digits are stripped (e.g. a bare pause mark
+    # like "ۚ" pasted with its conventional leading space -- see
+    # strip_harakat()'s docstring -- or a verse/footnote number pasted
+    # alongside a word, possibly wrapped in brackets/parens of some kind,
+    # e.g. "شَيْـًٔا ﴿١﴾" or "شَيْـًٔا (1)"). strip_harakat() already strips
+    # the digits themselves, but wrapping punctuation it doesn't
+    # specifically know about (ASCII parens, brackets, etc.) can still
+    # survive and leave a non-empty token -- so this checks for an actual
+    # LETTER rather than mere non-emptiness, which is what makes it robust
+    # to whatever bracket convention the number happened to be pasted
+    # with instead of only the ones normalize.py explicitly strips. Such
+    # tokens aren't words at all, so running them through lookup() only
+    # invites a spurious match (see search_lemma above); dropping them
+    # here keeps the word count/order in sync with what a person would
+    # actually call "the words" of the phrase.
+    tokens = [
+        t for t in query.split()
+        if any(c.isalpha() for c in strip_harakat(t))
+    ]
 
     if len(tokens) < 2:
         return lookup(tokens[0]) if tokens else {"type": "none", "query": query}
@@ -545,4 +556,4 @@ def fetch_all_roots():
             "occurrence_count": counts.get(r["root"], 0),
         })
 
-    return roots    
+    return roots

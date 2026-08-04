@@ -533,6 +533,47 @@ def _looks_like_bad_curated_meaning(text):
     return False
 
 
+_VERB_CITATION_GLOSS_RE = re.compile(
+    r"^(he|she|it|they)\b\s+[a-z]+(e[dn]|ied)\b", re.IGNORECASE
+)
+
+
+def _looks_like_verb_citation_gloss(text):
+    """
+    Word-family-use-only screen (see `_looks_like_bad_curated_meaning`'s
+    docstring for the general pattern this follows), specifically for
+    NON-VERB (pos != 'V') `_meaning_for_family_lemma` lookups.
+
+    Arabic dictionary convention glosses a VERB's citation (3rd person
+    masc. singular perfect) form as "He <past-tense-verb>" -- confirmed
+    as the deliberate, correct style for genuine verb entries in this
+    same `lemmas` table (649 rows use it, e.g. أَبْصَرَ -> "He saw").
+    That convention has no place on a NOUN or participle entry, though:
+    a word family's noun/participle member (e.g. an active participle,
+    verbal noun, or plain noun) is a *thing*, not a narrated completed
+    action, and its curated gloss should read like one ("deceased",
+    "fulfilling", "loyal") -- not like a verb citation form.
+
+    Spot-checked directly against this corpus: confirmed 67 lemmas
+    tagged 'N' by their own stem morpheme (quran.db `morphemes.tag`)
+    whose curated `lemmas.meaning` nonetheless follows this verb-
+    citation shape -- almost all traceable to a same-spelling-family
+    VERB's gloss having been attached to the NOUN row by mistake (e.g.
+    مُوفي, the active participle of أَوْفَى "to fulfill" -- confirmed
+    against quran.db's own words.english as "and those who fulfill" at
+    2:177 -- is instead stored with the meaning "He died", which
+    belongs to the unrelated death-sense verb تَوَفَّى).
+
+    Returns True (i.e. "don't show this") only for that specific
+    "He/She/It/They <past-tense verb>" shape; leaves every other
+    phrasing -- including genuinely correct short noun glosses like
+    "the one who believes" -- untouched.
+    """
+    if not text:
+        return False
+    return bool(_VERB_CITATION_GLOSS_RE.match(text.strip()))
+
+
 def _representative_occurrences_for_lemma(quran_cur, root, lemma, limit=5):
     """
     A few real quran.db occurrences of this exact stem-morpheme lemma
@@ -701,7 +742,8 @@ def _meaning_for_family_lemma(cur, lemma, pos, root, root_meaning, quran_cur=Non
     if lemma_meaning and not _is_junk_lemma_meaning(lemma_meaning.get("meaning")):
         candidate = lemma_meaning.get("meaning")
         if not _looks_like_bad_curated_meaning(candidate):
-            curated = candidate
+            if pos == "V" or not _looks_like_verb_citation_gloss(candidate):
+                curated = candidate
 
     family_gloss = get_family_gloss(cur, lemma, root, pos)
 
@@ -769,7 +811,23 @@ def get_lemma_meaning(cur, lemma):
     key = _meaning_key(lemma)
     if not key:
         return None
-    cur.execute("SELECT * FROM lemmas WHERE stripped = ?", (key,))
+    # `lemmas.stripped` is meant to be pre-folded the same way
+    # `_meaning_key()` folds lookup keys (ى -> ي, ة -> ه) -- but spot-
+    # checking against the table shows that fold was NOT actually
+    # applied when a lemma's own spelling ends in alif maqsura or
+    # contains tāʾ marbūṭa (confirmed: 211 rows still have literal ى
+    # and 555 still have literal ة in their `stripped` column, e.g.
+    # lemma أَوْفَى is stored with stripped='أوفى', not the folded
+    # 'أوفي' that _meaning_key(lemma) computes). A plain `stripped = ?`
+    # comparison against the DB's own column therefore silently misses
+    # every one of those rows. Applying the identical fold to the
+    # column value at query time (harmless no-op on rows that were
+    # already folded correctly) makes the match reliable either way.
+    cur.execute(
+        "SELECT * FROM lemmas "
+        "WHERE REPLACE(REPLACE(stripped, 'ى', 'ي'), 'ة', 'ه') = ?",
+        (key,),
+    )
     row = cur.fetchone()
     return dict(row) if row else None
 
@@ -792,7 +850,14 @@ def get_lemma_meaning_for_root(cur, lemma, root):
     # `lemmas.root` isn't pre-stripped/folded, so pull every row sharing
     # this stripped lemma spelling and compare `root` in Python via
     # _meaning_key() rather than trying to replicate that folding in SQL.
-    cur.execute("SELECT * FROM lemmas WHERE stripped = ?", (lemma_key,))
+    # See get_lemma_meaning's comment: `lemmas.stripped` isn't reliably
+    # pre-folded to match `_meaning_key()`'s ى->ي / ة->ه folds, so those
+    # same folds are applied to the column at query time here too.
+    cur.execute(
+        "SELECT * FROM lemmas "
+        "WHERE REPLACE(REPLACE(stripped, 'ى', 'ي'), 'ة', 'ه') = ?",
+        (lemma_key,),
+    )
     rows = cur.fetchall()
     if not rows:
         return None
@@ -907,7 +972,24 @@ def get_word_meaning(cur, surface):
     key = _meaning_key(surface)
     if not key:
         return None
-    cur.execute("SELECT * FROM words WHERE stripped = ?", (key,))
+    # Same gap as `lemmas.stripped` (see get_lemma_meaning) -- confirmed
+    # against this table too: 1451 rows still have literal ى and 995
+    # still have literal ة in `stripped` instead of the folded ي/ه
+    # `_meaning_key()` computes, so those rows silently miss a plain
+    # `stripped = ?` match without this same fold applied at query time.
+    #
+    # `meaning` here comes from a join against `roots`, not a `words`
+    # column: words.meaning/words.gloss used to hold the same Lane's
+    # Lexicon excerpt bulk-copied from roots.meaning onto every word
+    # sharing that root (verified byte-for-byte identical for all rows),
+    # so those two columns were dropped from `words` to shrink the db.
+    # This join reproduces the same value on demand instead.
+    cur.execute(
+        "SELECT w.*, r.meaning AS meaning FROM words w "
+        "LEFT JOIN roots r ON w.root = r.root "
+        "WHERE REPLACE(REPLACE(w.stripped, 'ى', 'ي'), 'ة', 'ه') = ?",
+        (key,),
+    )
     row = cur.fetchone()
     return dict(row) if row else None
 
@@ -1101,8 +1183,9 @@ def _verb_subject_marker(core_morpheme):
 
     return {
         "letter": surface[0],
+        "kind": "SUBJECT AGREEMENT",
         "meaning": meaning,
-        "notes": "Subject-agreement prefix (\u201c{}\u201d) fused into this imperfect verb \u2014 not a separate word.".format(meaning),
+        "notes": "Personal prefix of the imperfect verb, marking the subject as \u201c{}\u201d.".format(meaning),
     }
 
 
@@ -1140,21 +1223,45 @@ def _tanwin_badge(core_morpheme):
     case_tag = next((f for f in features if f in _TANWIN_CASE_LABELS), None)
     case_label = _TANWIN_CASE_LABELS.get(case_tag)
 
-    notes = "Tanwīn (nunation) \u2014 marks this noun as indefinite"
+    notes = "Tanwīn: this ending marks the noun as indefinite"
     if case_label:
-        notes += " and " + case_label
+        notes += ", in the {} case".format(case_label)
     notes += "."
 
-    return {"letter": surface[-1], "meaning": "tanwīn", "notes": notes}
+    return {"letter": surface[-1], "kind": "TANWĪN", "meaning": "tanwīn", "notes": notes}
+
+
+def _fused_marker_span(marker):
+    """
+    Builds the `<span class="fused-marker" data-fused-...>` for one fused
+    letter/diacritic. Deliberately carries its explanation as `data-*`
+    attributes rather than a native `title="..."` tooltip: browser
+    tooltips are slow to appear, can't be styled to match the rest of
+    the page, and don't work on touch at all. The front-end's own JS
+    (see result.html) reads these attributes and renders a small
+    styled popover card instead, positioned off the letter itself.
+    `tabindex="0"` keeps it reachable by keyboard even though it's a
+    <span>, not a real button.
+    """
+    return (
+        '<span class="fused-marker" tabindex="0" role="button" '
+        'data-fused-kind="{kind}" data-fused-notes="{notes}" '
+        'aria-label="{kind}: {notes}">{letter}</span>'
+    ).format(
+        kind=html.escape(marker.get("kind") or "FUSED MARKER", quote=True),
+        notes=html.escape(marker["notes"], quote=True),
+        letter=html.escape(marker["letter"]),
+    )
 
 
 def _annotate_main_segment(core_surface, subject_marker, tanwin_badge):
     """
     Builds an HTML string for the ORIGINAL WORD hero's MAIN BODY segment
     with the fused subject-marker letter and/or trailing tanwīn mark each
-    wrapped in their own `<span title="...">`, so hovering explains what
-    that one letter/diacritic is doing -- without a separate card
-    implying it's removable the way a real prefix/suffix is.
+    wrapped in their own `<span class="fused-marker" data-fused-...>`
+    (see `_fused_marker_span`), so interacting with that one letter pops
+    a small explanatory card off it -- without a separate card implying
+    it's removable the way a real prefix/suffix is.
 
     Returns None (caller should fall back to plain, unannotated text) if
     `core_surface` is empty or neither marker actually applies here.
@@ -1167,17 +1274,11 @@ def _annotate_main_segment(core_surface, subject_marker, tanwin_badge):
     suffix_html = ""
 
     if subject_marker and body.startswith(subject_marker["letter"]):
-        prefix_html = '<span class="fused-marker" title="{}">{}</span>'.format(
-            html.escape(subject_marker["notes"], quote=True),
-            html.escape(subject_marker["letter"]),
-        )
+        prefix_html = _fused_marker_span(subject_marker)
         body = body[len(subject_marker["letter"]):]
 
     if tanwin_badge and body.endswith(tanwin_badge["letter"]):
-        suffix_html = '<span class="fused-marker" title="{}">{}</span>'.format(
-            html.escape(tanwin_badge["notes"], quote=True),
-            html.escape(tanwin_badge["letter"]),
-        )
+        suffix_html = _fused_marker_span(tanwin_badge)
         body = body[: -len(tanwin_badge["letter"])]
 
     if not prefix_html and not suffix_html:
