@@ -71,7 +71,7 @@ _ROM = {
 _VOW = {"َ": "a", "ِ": "i", "ُ": "u", "ً": "an", "ٍ": "in", "ٌ": "un"}
 
 
-def romanise(word):
+def romanise(word, keep_tanwin=False):
     """Loose romanisation of a vowelled Arabic word, in the same simplified
     spelling the typed text is normalised to (see _norm_latin)."""
     text = (word or "").replace("ٰ", "ا")
@@ -89,8 +89,9 @@ def romanise(word):
         ch = letters[i]
         piece = long_piece = None
         if ch in ("\u064B", "\u064C", "\u064D"):
-            pass                                   # tanwin: a case ending, not typed
-        elif ch == "ا" and i > 0 and letters[i - 1] == "\u064B":
+            if keep_tanwin:                        # sabrun, rahmatan: typed with its ending
+                piece = _VOW[ch]
+        elif ch in "اى" and i > 0 and letters[i - 1] == "\u064B":
             pass                                   # the alif that carries -an
         elif ch in _VOW:
             if i < last:
@@ -199,6 +200,9 @@ def latin_keys(q):
             extra.append(k[:-1] + "h")      # salat -> صلاة (ة written h/t)
     if q.endswith("a"):
         extra += [k + "h" for k in keys]     # janna -> جنة
+    if re.search(r"[aiu]n$", q) and len(q) > 4:
+        # a typed case ending (-un/-an/-in, tanwin) is not a letter in Arabic: sabrun -> صَبْرٌ
+        extra += [k[:-1] for k in keys if k.endswith("n")]
     keys = keys + extra
     out, seen = [], set()
     for k in keys:
@@ -236,6 +240,8 @@ def _index():
         k = arabic_key(word)
         if k:
             rom, rom_long = romanise(word)
+            if re.search("[\u064B-\u064D]", word):
+                rom = (rom, romanise(word, keep_tanwin=True)[0])
             idx.setdefault(k, []).append((word, n, is_lemma, rom, rom_long))
     return idx
 
@@ -278,8 +284,9 @@ def suggest(query, limit=8):
         return []
     scored = {}
 
-    def consider(key, penalty, no_article=False):
+    def consider(key, penalty, no_article=False, strip_clitic=False):
         for word, n, is_lemma, rom, rom_long in idx.get(key, ()):
+            rom, rom_tan = rom if isinstance(rom, tuple) else (rom, None)
             if no_article and word.startswith(("ٱل", "ال")):
                 continue
             # th / dh are both used for ذ (and th for ث): compare them as one sound
@@ -287,6 +294,16 @@ def suggest(query, limit=8):
             if "q" not in typed_plain:
                 r = r.replace("q", "k")
             sim = SequenceMatcher(None, typed_plain, r).ratio()
+            if strip_clitic and len(r) > 3:
+                # compare without the joined fa-/wa-/bi-/li-/ka- the typed text left off
+                sim = max(sim, SequenceMatcher(None, typed_plain, r[2:]).ratio())
+            if rom_tan:   # the case ending typed out (sabrun, hudan, rahmatan)
+                rt = rom_tan.replace("aa", "a").replace("dh", "th")
+                if "q" not in typed_plain:
+                    rt = rt.replace("q", "k")
+                sim = max(sim, SequenceMatcher(None, typed_plain, rt).ratio())
+                if strip_clitic and len(rt) > 3:
+                    sim = max(sim, SequenceMatcher(None, typed_plain, rt[2:]).ratio())
             # a typed long vowel (aalem, raheem, nooh) should prefer a word
             # that really has one there (عَالِم over عَلِيم)
             rl = rom_long.replace("dh", "th")
@@ -315,7 +332,7 @@ def suggest(query, limit=8):
     # (sahibihi is only ever لِصَٰحِبِهِۦ)
     for k in keys[:4]:
         for p in "lbwfk":
-            consider(p + k, 0.15, no_article=True)
+            consider(p + k, 0.15, no_article=True, strip_clitic=True)
     if len(scored) < limit:
         for k in keys[:4]:
             for e in _edits1(k):
@@ -441,6 +458,8 @@ def _best_split(token, parts_left=3):
     best = None
     for i in range(3, len(token) - 2):
         head, tail = token[:i], token[i:]
+        if tail in ("an", "in", "un", "tan", "tin", "tun", "nan", "nin", "nun"):
+            continue                      # a case ending, not a second word
         if head.rstrip("-") in _ARTICLES:
             continue                      # "al" alone is the article, not a word
         h = _best(head)
