@@ -1,3 +1,4 @@
+import re
 from services.database import get_connection, get_meanings_connection
 from services.normalize import strip_harakat, normalize, normalize_hamza_notation
 from services.camel import camel_root_candidates
@@ -186,6 +187,45 @@ def search_normalized(cur, query):
     return cur.fetchone()
 
 
+# PATCH: everyday (modern) Arabic spelling differs from the Qur'anic
+# spelling quran.db stores, so a correctly typed word could miss:
+#   والذي  -> Qur'an writes the final ya as ى        (وَٱلَّذِى)
+#   السماوات -> Qur'an has a small (dagger) alif, not ا (ٱلسَّمَٰوَٰتِ)
+#   الصلاة -> Qur'an writes the alif as و             (ٱلصَّلَوٰةَ)
+#   رحمه / رحمة, شيء / شىء, and the reverse of each.
+def _spelling_variants(q):
+    out = []
+    def add(v):
+        if v and v != q and v not in out:
+            out.append(v)
+    ya = q.replace("ي", "ى")
+    add(ya)
+    add(q.replace("ى", "ي"))
+    for base in (q, ya):
+        if base.endswith("ه"):
+            add(base[:-1] + "ة")
+        if base.endswith("ة"):
+            add(base[:-1] + "ه")
+        add(base.replace("اة", "وة"))
+        # medial alifs the Qur'an writes as a small (dagger) alif
+        if len(base) > 3:
+            add(base[0] + base[1:-1].replace("ا", "") + base[-1])
+            add(base[0] + base[1:-1].replace("ا", "") + base[-1].replace("ا", ""))
+    return out
+
+
+def search_spelling_variants(cur, query):
+    q = normalize(query)
+    if len(q) < 2:
+        return None
+    for v in _spelling_variants(q):
+        cur.execute("SELECT * FROM words WHERE normalized = ? LIMIT 1", (v,))
+        row = cur.fetchone()
+        if row:
+            return row
+    return None
+
+
 def search_lemma(cur, query):
     """
     Compares NORMALIZED query against the NORMALIZED lemma column.
@@ -203,6 +243,24 @@ def search_lemma(cur, query):
     if not normalized_query:
         return None
 
+    # PATCH: a fully vowelled lemma picks its own word first -- عالِم
+    # ("knower") and عالَم ("world") only differ by a vowel, and both
+    # normalize to عالم.
+    cur.execute("SELECT * FROM words WHERE lemma = ? LIMIT 1", (query,))
+    row = cur.fetchone()
+    if row:
+        return row
+    # the stem's own lemma (morphemes.lemma), e.g. صَبْر, which the
+    # word-level lemma column can spell differently
+    cur.execute("""
+        SELECT w.* FROM morphemes m JOIN words w ON w.id = m.word_id
+        WHERE m.lemma = ? AND m.features NOT LIKE '%PREF%' AND m.features NOT LIKE '%SUFF%'
+        LIMIT 1
+    """, (query,))
+    row = cur.fetchone()
+    if row:
+        return row
+
     cur.execute("""
         SELECT *
         FROM words
@@ -210,6 +268,42 @@ def search_lemma(cur, query):
         LIMIT 1
     """, (normalized_query,))
     return cur.fetchone()
+
+
+# PATCH: a word the person types without the clitic it is always written
+# with in the Qur'an (e.g. ٱلْمُنْخَنِقَةُ, which only occurs as
+# وَٱلْمُنْخَنِقَةُ in 5:3), or with an ال the Qur'an never puts on it,
+# matched nothing at all. Only tried after every exact stage has failed.
+_PROCLITICS = ["و", "ف", "ب", "ل", "ك", "ال", "وال", "فال", "بال", "كال", "لل", "ولل", "فلل"]
+_ARTICLES = ["وال", "فال", "بال", "كال", "ولل", "فلل", "لل", "ال", "و", "ف"]
+
+
+def search_with_clitics(cur, query):
+    """Returns (row, how) for the closest Qur'anic form, or (None, None).
+    1. the typed form plus a leading clitic   (المنخنقة -> والمنخنقة)
+    2. the typed form minus a leading clitic   (الصاعقة -> صاعقة)
+       matched as a surface, then as a lemma."""
+    q = normalize(query)
+    if len(q) < 3:
+        return None, None
+    for p in _PROCLITICS:
+        cur.execute("SELECT * FROM words WHERE normalized = ? LIMIT 1", (p + q,))
+        row = cur.fetchone()
+        if row:
+            return row, "added"
+    for p in _ARTICLES:
+        if q.startswith(p) and len(q) - len(p) >= 2:
+            bare = q[len(p):]
+            for cand in [bare] + [pp + bare for pp in _PROCLITICS]:
+                cur.execute("SELECT * FROM words WHERE normalized = ? LIMIT 1", (cand,))
+                row = cur.fetchone()
+                if row:
+                    return row, "removed"
+            cur.execute("SELECT * FROM words WHERE NORMALIZE(lemma) = ? LIMIT 1", (bare,))
+            row = cur.fetchone()
+            if row:
+                return row, "removed"
+    return None, None
 
 
 def search_root(cur, query):
@@ -241,6 +335,29 @@ def lookup(query):
     _register_normalize(conn)
     cur = conn.cursor()
 
+    # PATCH: explicit root search. The ROOT card's link used to send the
+    # bare root letters (e.g. "بسم") through the normal word stages first,
+    # so for 834 roots it opened a WORD spelled the same way -- for 47 of
+    # them a word of a DIFFERENT root (e.g. بسم -> بِسْمِ, root سمو).
+    # result.html now links to "√" + root, which jumps straight to stage 5.
+    if query.startswith("√"):
+        wanted = query[1:].strip()
+        cur.execute("SELECT root FROM roots WHERE root = ?", (wanted,))
+        exact = cur.fetchone()
+        root = exact["root"] if exact else search_root(cur, wanted)
+        if root:
+            occurrences = fetch_occurrences_by_root(cur, root)
+            word_family = fetch_word_family_by_root(cur, root)
+            conn.close()
+            return attach_family_meanings({
+                "type": "root",
+                "query": query,
+                "root": root,
+                "occurrences": [dict(x) for x in occurrences],
+                "word_family": [dict(x) for x in word_family],
+            })
+        query = query[1:].strip()
+
     # 1. Surface matching
     word = search_surface(cur, query)
 
@@ -249,6 +366,20 @@ def lookup(query):
     # homographs that stripped/normalized matching below cannot)
     if word is None:
         word = search_surface_notation(cur, query)
+
+    # 1c. PATCH: a vowelled dictionary form (صَبْر, ذِكْر, عالِم) -- match it
+    # as a lemma before the vowel-blind stages below turn it into a
+    # different word with the same letters (صَبَرَ, ذَكَر, عالَم)
+    if word is None and re.search(r"[\u064B-\u0652]", query):
+        cur.execute("SELECT * FROM words WHERE lemma = ? LIMIT 1", (query,))
+        word = cur.fetchone()
+        if word is None:
+            cur.execute("""
+                SELECT w.* FROM morphemes m JOIN words w ON w.id = m.word_id
+                WHERE m.lemma = ? AND m.features NOT LIKE '%PREF%' AND m.features NOT LIKE '%SUFF%'
+                LIMIT 1
+            """, (query,))
+            word = cur.fetchone()
 
     # 2. Stripped matching
     if word is None:
@@ -261,6 +392,17 @@ def lookup(query):
     # 4. Lemma matching
     if word is None:
         word = search_lemma(cur, query)
+
+    # 4a. PATCH: modern spelling of a Qur'anic word (ي/ى, ة/ه, dagger alif).
+    # After the lemma stage, so a dictionary form such as عالِم still finds
+    # its own word rather than a look-alike spelling (عِلْم).
+    if word is None:
+        word = search_spelling_variants(cur, query)
+
+    # 4b. PATCH: closest Qur'anic form with a leading clitic added/removed
+    clitic_note = None
+    if word is None and not search_root(cur, query):
+        word, clitic_note = search_with_clitics(cur, query)
 
     # Word found (stages 1-4)
     if word:
@@ -288,6 +430,7 @@ def lookup(query):
             "morphemes": [dict(x) for x in morphemes],
             "occurrences": [dict(x) for x in occurrences],
             "word_family": [dict(x) for x in word_family],
+            "clitic_note": clitic_note,
         }
 
         return attach_meanings(result)

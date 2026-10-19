@@ -6,7 +6,7 @@ from spellchecker import SpellChecker
 
 from services.database import get_connection, get_meanings_connection
 from services.normalize import strip_harakat
-from services.camel import camel_stem_gloss, strip_definite_article_gloss, expected_voice_from_features
+from services.camel import camel_stem_gloss, strip_definite_article_gloss, expected_voice_from_features, camel_wazn, _wazn_specific_note
 
 
 # ==========================================================
@@ -737,6 +737,14 @@ def _meaning_for_family_lemma(cur, lemma, pos, root, root_meaning, quran_cur=Non
     simply wrong English word). `family_glosses` text is never screened
     this way; it hasn't shown this failure pattern.
     """
+    # PATCH: reviewed, per-lemma glosses (meanings.db `family_overrides`,
+    # keyed on the EXACT diacritized lemma + root) win outright. The other
+    # sources are keyed on the unvowelled spelling, so distinct words such
+    # as نَزَلَ / نَزَّلَ or مُنزَل / مُنزِل could only ever share one gloss.
+    reviewed = get_family_override(cur, lemma, root, pos)
+    if reviewed:
+        return reviewed
+
     lemma_meaning = get_lemma_meaning_for_root(cur, lemma, root)
     curated = None
     if lemma_meaning and not _is_junk_lemma_meaning(lemma_meaning.get("meaning")):
@@ -770,6 +778,32 @@ def _meaning_for_family_lemma(cur, lemma, pos, root, root_meaning, quran_cur=Non
             return fallback
 
     return None
+
+
+def get_family_override(cur, lemma, root, pos=None):
+    """PATCH: reviewed gloss for this exact lemma under this root, from
+    meanings.db's `family_overrides` table (lemma, root, pos, meaning).
+    Matching is on the NFC-normalized diacritized lemma, so it never
+    conflates two lemmas that only differ by a vowel or shadda. When `pos`
+    ('N'/'V', the stem morpheme's tag) is given, the row for that part of
+    speech is preferred -- a few lemmas occur under one root as both a
+    verb and a noun (e.g. أَحْصَى). Returns None if the table or the row
+    doesn't exist."""
+    if not lemma or not root:
+        return None
+    try:
+        cur.execute("SELECT pos, meaning FROM family_overrides WHERE lemma = ? AND root = ?",
+                    (unicodedata.normalize("NFC", lemma), root))
+    except Exception:
+        return None
+    rows = cur.fetchall()
+    if not rows:
+        return None
+    if pos:
+        for row in rows:
+            if row["pos"] == pos:
+                return row["meaning"]
+    return rows[0]["meaning"]
 
 
 def get_root_meaning(cur, root):
@@ -1016,6 +1050,30 @@ def get_stem_override(cur, surface):
     cur.execute("SELECT stem_override FROM words WHERE surface = ?", (surface,))
     row = cur.fetchone()
     return row["stem_override"] if row and row["stem_override"] else None
+
+
+def get_word_senses(cur, surface):
+    """All grammatical roles this exact spelling plays across the Qur'an,
+    most common first, from meanings.db `word_senses` (only spellings with
+    two or more genuinely different roles have rows). Each row carries the
+    translator's meaning for that role, how often it occurs, and one example
+    occurrence with a word of context either side."""
+    if not surface:
+        return []
+    try:
+        cur.execute(
+            "SELECT rank, code, role, role_ar, meaning, count, example_ref, "
+            "example_before, example_arabic, example_after "
+            "FROM word_senses WHERE surface = ? ORDER BY rank",
+            (surface,),
+        )
+    except Exception:  # older meanings.db without the table
+        return []
+    rows = [dict(r) for r in cur.fetchall()]
+    total = sum(r["count"] for r in rows) or 1
+    for r in rows:
+        r["share"] = r["count"] / total
+    return rows if len(rows) > 1 else []
 
 
 def get_cached_stem_meaning(cur, surface):
@@ -1543,7 +1601,7 @@ def _strip_leading_affix_glosses(text, cur, morphemes, core_morpheme=None):
     does just below -- since that kind of suffix was never expected to
     leak a leading word into `text` in the first place.
     """
-    if not text or not morphemes:
+    if not text:
         return text, True
 
     # A leading "(of)"/"(the)"/... marker documents an implied word from
@@ -1552,7 +1610,18 @@ def _strip_leading_affix_glosses(text, cur, morphemes, core_morpheme=None):
     # gloss -- so it can never be matched by the morpheme loop below. Strip
     # it unconditionally first; see _strip_leading_parenthetical's
     # docstring.
+    #
+    # PATCH: this used to sit AFTER an early `return text, True` for words
+    # with no affix morphemes at all, so exactly those words (e.g. ٱللَّهِ,
+    # جَهَنَّمُ) kept the bracket and showed "(of) Allah", "(is) Hell" as
+    # their stem meaning (1,951 words). It now runs for every word.
     text = _strip_leading_parenthetical(text)
+
+    if not morphemes:
+        text = text.strip()
+        if text:
+            text = text[0].upper() + text[1:]
+        return text, True
 
     fully_stripped = True
 
@@ -1674,6 +1743,171 @@ def _camel_guess_stem_meaning(result, word, cur, cached_stem_meaning):
     )
 
 
+def get_wazn_entry(cur, core_morpheme):
+    """Precomputed pattern for this word's stem, from meanings.db's
+    wazn_entries table (built by tools/build_wazn.py and checked by hand).
+
+    Keyed by the stem morpheme's own lemma, root, kind and verb form --
+    the same key the builder used -- so every inflected form of a lemma
+    gets the same pattern. Kinds: V (verb), ACT / PASS (participles),
+    VN (verbal noun), ADJ, N. Returns a dict shaped like camel_wazn()'s
+    result plus "wazn_of", or None when the table has no row (older
+    meanings.db) so the caller can fall back to the live CAMeL guess.
+    A row with an empty wazn means "no reliable pattern" (proper names,
+    number words, irregular nouns): that returns {"wazn": None, ...}
+    rather than None, so no guess is shown for it."""
+
+    if not core_morpheme or not core_morpheme.get("root"):
+        return None
+    parts = (core_morpheme.get("features") or "").split("|")
+    vf = next((int(x[3:]) for x in parts if x.startswith("VF:") and x[3:].isdigit()), None)
+    if parts and parts[0] in ("PERF", "IMPF", "IMPV"):
+        tag = "V"
+    elif "ACT_PCPL" in parts:
+        tag = "ACT"
+    elif "PASS_PCPL" in parts:
+        tag = "PASS"
+    elif "VN" in parts:
+        tag = "VN"
+    elif "ADJ" in parts:
+        tag = "ADJ"
+    else:
+        tag = "N"
+    if tag == "N":
+        vf = None
+    try:
+        row = cur.execute(
+            "SELECT wazn, label, wazn_of FROM wazn_entries "
+            "WHERE lemma = ? AND root = ? AND tag = ? AND vf = ?",
+            (core_morpheme.get("lemma"), core_morpheme.get("root"), tag, vf or 0),
+        ).fetchone()
+    except Exception:
+        return None
+    if row is None:
+        return None
+    wazn, label, wazn_of = row[0], row[1], row[2]
+    try:
+        extra = cur.execute(
+            "SELECT is_basic, wazn_key FROM wazn_entries "
+            "WHERE lemma = ? AND root = ? AND tag = ? AND vf = ?",
+            (core_morpheme.get("lemma"), core_morpheme.get("root"), tag, vf or 0),
+        ).fetchone()
+    except Exception:
+        extra = None
+    return {
+        "key": (core_morpheme.get("lemma"), core_morpheme.get("root"), tag, vf or 0),
+        "is_basic": bool(extra and extra[0]),
+        "wazn_key": extra[1] if extra else None,
+        "wazn": wazn,
+        "wazn_label": label if wazn else None,
+        "wazn_note": _wazn_specific_note(wazn, label) if wazn else None,
+        # verbs: the past-tense dictionary form (e.g. قَالَ for يَقُولُ);
+        # nouns: None here, so the caller uses the word's own lemma
+        "wazn_of": wazn_of,
+        # a label with no pattern (e.g. "Proper name -- no pattern is given")
+        "wazn_absent_reason": label if not wazn else None,
+    }
+
+
+def get_pattern_words(cur, wazn_key, exclude_key, limit=12):
+    """Other Qur'anic words built on the same pattern, most frequent first:
+    (list of {lemma, display, gloss, freq, root, kind}, total count). Used
+    by the PATTERN card's word list; empty for older meanings.db files."""
+    if not wazn_key:
+        return [], 0
+    try:
+        rows = cur.execute(
+            "SELECT lemma, root, tag, vf, display, gloss, freq FROM wazn_entries "
+            "WHERE wazn_key = ? ORDER BY freq DESC, display",
+            (wazn_key,),
+        ).fetchall()
+    except Exception:
+        return [], 0
+    kinds = {"V": "Verb", "ACT": "Active participle", "PASS": "Passive participle",
+             "VN": "Verbal noun", "ADJ": "Adjective", "N": "Noun"}
+    out, seen = [], set()
+    for lemma, root, tag, vf, display, gloss, freq in rows:
+        if (lemma, root, tag, vf) == tuple(exclude_key or ()):
+            continue
+        # one entry per word shown (a lemma can be tagged N and ADJ)
+        if (display, root) in seen:
+            continue
+        seen.add((display, root))
+        out.append({"lemma": lemma, "display": display or lemma, "gloss": gloss,
+                    "freq": freq, "root": root, "kind": kinds.get(tag, tag)})
+    return out[:limit], len(out)
+
+
+def _camel_guess_wazn(word, core_morpheme):
+    """
+    Best CAMeL-derived wazn (pattern) for this word -- computed from the
+    word's LEMMA surface (word.get("lemma")), not the core morpheme's own
+    surface, and disambiguated with the same corpus-derived root/lemma/
+    pos/voice hints as _camel_guess_stem_meaning above (see that
+    function's docstring for why expected_pos is the CORE MORPHEME's own
+    tag rather than word.get("pos"), which is unreliable for this exact
+    same reason on suffixed verbs).
+
+    Analyzing the lemma rather than the core morpheme surface matters
+    because, unlike attached pronouns/subject affixes on verbs (which
+    this corpus DOES split into their own PREF/SUFF morphemes -- see
+    _get_core_morpheme), nominal inflection such as sound plural endings
+    is NOT split out: the "core" morpheme for a plural noun like
+    مُؤْمِنِينَ is the entire inflected surface (features
+    "...|LEM:مُؤْمِن|MP|ACC", no SUFF flag), not just the singular stem
+    مُؤْمِن. Feeding that whole inflected surface to CAMeL produces the
+    pattern of the PLURAL form instead of the traditional وزن, which
+    grammar books always define on the singular/dictionary form (see
+    _fa_ala_template's docstring). word.get("lemma") already IS that
+    singular/dictionary form, so it's what should be analyzed;
+    expected_lemma is still passed through so _analysis_score can pick
+    the right one of CAMeL's candidate analyses of it.
+
+    Falls back to the core morpheme's own surface if the corpus has no
+    lemma for this word at all, so a wazn can still be attempted rather
+    than giving up outright.
+
+    words.pattern exists as a column but is unpopulated in this corpus
+    (checked directly: 0 non-null rows) and its intended encoding isn't
+    documented anywhere in this codebase, so it's deliberately NOT read
+    here -- wiring it in later, once it's actually populated with a
+    known encoding, would just mean adding a first-choice branch above
+    this live CAMeL call, the same way get_stem_override/
+    get_cached_stem_meaning layer in front of _camel_guess_stem_meaning.
+
+    Returns None if there's no core morpheme, or camel_wazn() has
+    nothing for it. Otherwise the dict camel_wazn() returns, with one
+    extra key added -- "wazn_of": the actual surface the wazn was
+    computed from (i.e. `wazn_surface` below) -- so a caller/template
+    can caption the card with what form the pattern belongs to (e.g.
+    "of مُؤْمِن") instead of leaving it looking like it describes
+    whatever surface the person searched, which for an inflected search
+    like مُؤْمِنِينَ it deliberately does not.
+    """
+
+    if not core_morpheme:
+        return None
+
+    wazn_surface = word.get("lemma") or core_morpheme.get("surface")
+
+    wazn_info = camel_wazn(
+        wazn_surface,
+        expected_root=word.get("root"),
+        expected_lemma=word.get("lemma"),
+        expected_pos=core_morpheme.get("tag"),
+        expected_voice=expected_voice_from_features(core_morpheme.get("features")),
+        # PATCH: the stem's own grammatical tags (verb form, participle,
+        # verbal noun) -- see camel.camel_wazn.
+        features=core_morpheme.get("features"),
+    )
+
+    if not wazn_info:
+        return None
+
+    wazn_info["wazn_of"] = wazn_surface
+    return wazn_info
+
+
 def attach_meanings(result):
     """
     Mutates and returns `result` (a "word"-type dict from search.lookup())
@@ -1718,6 +1952,17 @@ def attach_meanings(result):
     cur = conn.cursor()
 
     word = result["word"]
+
+    # PATCH: words.lemma is filled at import time from a fixed morpheme
+    # SLOT, not from the stem (see search.fetch_word_family_by_root's
+    # docstring), so on 401 words it names a prefix/suffix's lemma or a
+    # different form entirely. Everything below (MEANING fallback, CAMeL
+    # disambiguation, wazn) needs the STEM's lemma, so take it from the
+    # core morpheme, keeping the original only as a fallback.
+    _core_for_lemma = _get_core_morpheme(result.get("morphemes", []))
+    if _core_for_lemma and _core_for_lemma.get("lemma"):
+        word["lemma"] = _core_for_lemma["lemma"]
+
     word["root_meaning"] = get_root_meaning(cur, word.get("root"))
 
     # Compute the same short-gloss precedence fetch_all_roots() uses for
@@ -1752,7 +1997,13 @@ def attach_meanings(result):
     # reusing that cleaned text instead keeps both cards consistent and
     # gives curators one place (roots.short_override) to fix either.
     lemma_meaning = get_lemma_meaning(cur, word.get("lemma"))
-    if lemma_meaning and not _is_junk_lemma_meaning(lemma_meaning.get("meaning")):
+    # PATCH: the reviewed per-lemma gloss (see get_family_override) is the
+    # most reliable lemma-level meaning there is, so it's preferred here too.
+    reviewed = get_family_override(cur, word.get("lemma"), word.get("root"),
+                                   (_core_for_lemma or {}).get("tag"))
+    if reviewed:
+        word_meaning = {"meaning": reviewed, "notes": None}
+    elif lemma_meaning and not _is_junk_lemma_meaning(lemma_meaning.get("meaning")):
         word_meaning = lemma_meaning
     else:
         word_meaning = {"meaning": root_short, "notes": None} if root_short else None
@@ -1782,6 +2033,10 @@ def attach_meanings(result):
 
     stem_override = get_stem_override(cur, word.get("surface"))
     cached_stem_meaning = get_cached_stem_meaning(cur, word.get("surface"))
+    # PATCH: words whose core plays more than one grammatical role across
+    # the Qur'an (e.g. وَمَا = negation / relative / question / conditional)
+    # get every role listed, most common first. Empty for everything else.
+    word["senses"] = get_word_senses(cur, word.get("surface"))
 
     # Needed ahead of the stem_meaning chain below (see
     # _strip_leading_affix_glosses) as well as for the PREFIX/SUFFIX
@@ -1815,16 +2070,17 @@ def attach_meanings(result):
         # removed; otherwise prefer a CAMeL-derived guess (computed from
         # the stem morpheme's own surface alone, so it can't carry this
         # leak), on the same reasoning as the words.english branch below.
-        stem_only, fully_stripped = _strip_leading_affix_glosses(
+        # PATCH: a stem_override is hand-curated and is now trusted as
+        # written. It still goes through the strip (so an older override
+        # seeded with a leaked "and ..." or "(of) ..." is cleaned), but it is
+        # no longer thrown away in favour of a CAMeL guess just because an
+        # attached affix's gloss couldn't be found at the front of it --
+        # that made it impossible to correct any word carrying a prefix or
+        # an object pronoun from the database.
+        stem_only, _fully_stripped = _strip_leading_affix_glosses(
             stem_override, cur, prefix_morphemes + suffix_morphemes, core_morpheme
         )
-        if fully_stripped:
-            word["stem_meaning"] = strip_definite_article_gloss(stem_only)
-        else:
-            word["stem_meaning"] = (
-                _camel_guess_stem_meaning(result, word, cur, cached_stem_meaning)
-                or strip_definite_article_gloss(stem_only)
-            )
+        word["stem_meaning"] = strip_definite_article_gloss(stem_only)
     elif word.get("english"):
         # `words.english` is this corpus's own per-occurrence-curated gloss
         # (e.g. "are tried" / "will be tried" / "will not be tested" for
@@ -1883,6 +2139,39 @@ def attach_meanings(result):
         word["stem_meaning"] = _camel_guess_stem_meaning(result, word, cur, cached_stem_meaning)
 
     word["stem_notes"] = _core_particle_notes(core_morpheme)
+
+    # WAZN (pattern) card -- see _camel_guess_wazn's docstring. Live CAMeL
+    # call, same as the uncached tail of the stem_meaning chain above;
+    # there's no precomputed cache for this yet (unlike
+    # get_cached_stem_meaning), so every request pays this cost until one
+    # is added.
+    wazn_info = get_wazn_entry(cur, core_morpheme)
+    if wazn_info is not None:
+        if not wazn_info.get("wazn_of"):
+            wazn_info["wazn_of"] = word.get("lemma") or (core_morpheme or {}).get("surface")
+        if not wazn_info.get("wazn"):
+            wazn_info = None
+    else:
+        wazn_info = _camel_guess_wazn(word, core_morpheme)
+    word["wazn"] = wazn_info["wazn"] if wazn_info else None
+    word["wazn_label"] = wazn_info["wazn_label"] if wazn_info else None
+    word["wazn_note"] = wazn_info["wazn_note"] if wazn_info else None
+    # The word this pattern was actually derived from -- almost always
+    # the lemma (singular/dictionary form), NOT necessarily the surface
+    # the person searched; see _camel_guess_wazn's docstring. Only
+    # worth showing in the UI when it differs from the searched surface
+    # itself (e.g. no point captioning "of قَالَ" under a wazn card for
+    # a search on قَالَ) -- that comparison is left to the template/
+    # caller since it already has both values.
+    word["wazn_of"] = wazn_info["wazn_of"] if wazn_info else None
+
+    # Basic shapes (root letters plus vowels only) get a quieter card and no
+    # word list -- see services/wazn_view.is_basic and tools/enrich_wazn.py.
+    word["wazn_basic"] = bool(wazn_info and wazn_info.get("is_basic"))
+    word["pattern_words"], word["pattern_words_total"] = ([], 0)
+    if word["wazn"] and wazn_info and not word["wazn_basic"]:
+        word["pattern_words"], word["pattern_words_total"] = get_pattern_words(
+            cur, wazn_info.get("wazn_key"), wazn_info.get("key"))
 
     subject_marker = _verb_subject_marker(core_morpheme)
     tanwin_badge = _tanwin_badge(core_morpheme)
@@ -1959,6 +2248,30 @@ def attach_family_meanings(result):
     return result
 
 
+# PATCH: 208 suffix morphemes (all PRON|SUFF|1S) have an EMPTY surface --
+# the "my" yā' that the Qur'anic spelling drops in vocatives and similar
+# (رَبِّ "my Lord", يَٰقَوْمِ "O my people"), leaving only the kasra on the
+# stem. The suffix card used to print nothing at all for its letters.
+def _suffix_display_text(m):
+    surface = m.get("surface")
+    if surface:
+        return surface
+    if "1S" in (m.get("features") or "").split("|"):
+        return "(ي)"
+    return "(not written)"
+
+
+def _suffix_display_meaning(m):
+    meaning = m.get("meaning")
+    if m.get("surface") or not meaning:
+        return meaning
+    meaning = dict(meaning)
+    extra = ("The yā' of “my” is not written here — only the kasra "
+             "on the last letter of the stem shows it.")
+    meaning["notes"] = (meaning.get("notes") + ". " + extra) if meaning.get("notes") else extra
+    return meaning
+
+
 def _cards_layout(prefix_morphemes, suffix_morphemes):
     """
     Builds up to two INDEPENDENT cards -- one for prefixes, one for
@@ -2000,7 +2313,7 @@ def _cards_layout(prefix_morphemes, suffix_morphemes):
         suffix_card = {
             "kind": "suffix",
             "parts": [
-                {"text": m.get("surface"), "meaning": m.get("meaning")}
+                {"text": _suffix_display_text(m), "meaning": _suffix_display_meaning(m)}
                 for m in suffix_morphemes
             ],
         }

@@ -8,7 +8,7 @@ other (and from the actual adjectives آمِنَة/سالِم that legitimately 
   مَأْمُون (passive participle)        'safe' -> 'trustworthy, secure, dependable'
 
 Run directly against the live meanings.db:
-    python3 fix_maman_mamun.py databases/meanings.db
+    python3 test2.py databases/meanings.db
 """
 import sqlite3
 import sys

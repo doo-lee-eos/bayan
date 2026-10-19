@@ -17,6 +17,8 @@
     window.scrollTo(0, 0);
 </script>
 
+<link rel="stylesheet" href="{{ url_for('static', filename='css/search-tools.css') }}">
+<script src="{{ url_for('static', filename='js/search-tools.js') }}" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap" rel="stylesheet">
@@ -856,7 +858,8 @@ body {
                 id="search-input"
                 type="text"
                 name="q"
-                placeholder="الصَّبْر">
+                dir="auto"
+                placeholder="الصَّبْر  ·  sabr">
 
             <button type="submit">
                 Explore
@@ -866,6 +869,7 @@ body {
             </button>
         </form>
     </div>
+    <div class="search-hint">Type in Arabic or in English letters — <em>sabr</em>, <em>rahma</em>, <em>allah</em>. Tap <em>ع</em> for an Arabic keyboard.</div>
 
     <div class="hero-suggestions">
         <span class="chip-label">Try</span>

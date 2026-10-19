@@ -1,3 +1,5 @@
+import re
+
 from camel_tools.morphology.database import MorphologyDB
 from camel_tools.morphology.analyzer import Analyzer
 
@@ -489,3 +491,694 @@ def camel_stem_gloss(surface, expected_root=None, expected_lemma=None, expected_
     non_proper = [a for a in analyses if (a.get("pos") or "").lower() != "noun_prop"]
 
     return best_gloss(non_proper) or best_gloss(analyses)
+
+
+# -------------------------------------------------------
+# Wazn (pattern) -- the ف-ع-ل placeholder template
+# -------------------------------------------------------
+#
+# CAMeL's per-analysis `pattern` feature is a digit-templated skeleton of
+# the diacritized form: every slot the word's own root radicals occupy is
+# written as that radical's 1-based position in the root (1st, 2nd, 3rd,
+# and -- for a quadriliteral root -- 4th), while everything else the
+# pattern itself contributes -- inserted long vowels, diacritics, a
+# doubling shadda, an augment letter like the ت of تَفْعِيل -- is left as
+# literal Arabic text exactly as CAMeL supplies it. E.g. for كَاتِب (root
+# ك.ت.ب) CAMeL's pattern comes back as something like "1َا2ِ3": slot 1 is
+# ك, slot 2 is ت, slot 3 is ب.
+#
+# Traditional Arabic grammar describes this exact same shape using three
+# fixed placeholder letters -- ف (fā'), ع (ʿayn), ل (lām) -- standing in
+# for "1st root letter", "2nd root letter", "3rd root letter"
+# respectively (a repeated ل covers a 4th, quadriliteral radical, by the
+# same convention grammar books use for quadriliteral patterns like
+# فَعْلَل). Substituting those placeholder letters for CAMeL's digits is
+# what turns "1َا2ِ3" into the familiar وزن (wazn) فَاعِل.
+
+_WAZN_SLOT_LETTERS = ("ف", "ع", "ل", "ل")
+
+
+def _fa_ala_template(pattern):
+    """
+    Converts CAMeL's digit-templated `pattern` feature into the
+    traditional ف-ع-ل placeholder form (e.g. "1َا2ِ3" -> "فَاعِل"),
+    preserving every other character -- diacritics, long vowels, augment
+    letters, shadda -- exactly as CAMeL supplied them. Only the digit
+    characters are substituted; anything CAMeL emits outside 1-4 (which
+    shouldn't happen for a real triliteral/quadriliteral root, but isn't
+    assumed impossible) is left as-is rather than guessed at.
+
+    Returns None if `pattern` is falsy.
+    """
+
+    if not pattern:
+        return None
+
+    out_chars = []
+    for ch in pattern:
+        if ch.isdigit():
+            slot = int(ch) - 1
+            if 0 <= slot < len(_WAZN_SLOT_LETTERS):
+                out_chars.append(_WAZN_SLOT_LETTERS[slot])
+                continue
+        out_chars.append(ch)
+
+    return "".join(out_chars)
+
+
+# CAMeL's own `pattern` feature (used by _fa_ala_template above) is
+# unreliable on exactly the words this feature exists to help with most:
+# roots containing a hamza radical, or a radical letter that happens to
+# repeat elsewhere in the word as a non-root augment. Both come from the
+# same root cause -- CAMeL's pattern-templating appears to match root
+# radicals against the diacritized surface by literal character identity
+# rather than true morphological alignment:
+#
+#   - Hamza (root radical أ) surfaces differently depending on its
+#     carrier letter (ء أ إ آ ؤ ئ) purely by orthographic rule, not as a
+#     different letter -- but a literal-character match against the
+#     root's own bare ء fails to recognize ؤ/ئ/etc. as "the same
+#     radical", so that slot never gets digit-tagged and shows up as
+#     literal, un-substituted Arabic in the output.
+#   - A radical letter that also happens to appear earlier in the word
+#     as an unrelated augment (e.g. مُؤْمِن's Form IV prefix م
+#     coincidentally sharing a letter with its own root's 2nd radical
+#     م) can get matched at that earlier, wrong position instead, again
+#     leaving the true radical's own occurrence un-substituted later on.
+#
+# Confirmed empirically against a real lookup: مُؤْمِن (root أ.م.ن) came
+# back as عُؤْمِل instead of the correct مُفْعِل -- literal ؤ where
+# radical-1 should have substituted to ف, and a wrongly-matched ع where
+# the *augment* م should have stayed literal, while the *true* radical-2
+# م later in the word stayed un-substituted instead of becoming ع.
+#
+# _build_wazn_from_diac below reconstructs the same digit-template
+# ourselves from the analysis's own `diac` (fully diacritized surface)
+# and `root` fields, instead of trusting CAMeL's pre-built `pattern`:
+# it walks the root's radicals IN ORDER and, for each one, finds its
+# first remaining occurrence in `diac` scanning strictly left-to-right
+# from just after the previous radical's match. That ordering means an
+# earlier unrelated occurrence of the same letter is never available to
+# be mismatched onto a later radical, and hamza-carrier spelling no
+# longer breaks the match since carriers are treated as interchangeable.
+#
+# This is tried FIRST (see camel_wazn below); the old CAMeL-`pattern`-
+# based _fa_ala_template is kept only as a fallback for analyses that
+# somehow lack a usable `diac`/`root` pair.
+
+_HAMZA_FORMS = set("ءأإآؤئ")
+
+
+def _radicals_from_root(root):
+    """
+    Splits a root string into its ordered list of radical characters.
+    Handles both CAMeL's own dot-separated format (e.g. "أ.م.ن") and
+    this corpus's plain concatenated format (e.g. "أمن", no dots) --
+    if there's no "." in the string, each character is treated as one
+    radical.
+
+    Returns None if `root` is falsy, or if any radical is CAMeL's "#"
+    (letter unclear) placeholder -- a template can't be built
+    confidently around an unknown radical, so this is treated the same
+    as "no root to work from" rather than guessed at.
+    """
+
+    if not root:
+        return None
+
+    radicals = root.split(".") if "." in root else list(root)
+    if not radicals or any((not r or r == "#") for r in radicals):
+        return None
+
+    return radicals
+
+
+def _letters_match(diac_char, radical_char):
+    """
+    True if `diac_char` (a character from the fully-diacritized surface)
+    is the same radical as `radical_char` (a character from CAMeL's root
+    string) -- treating any hamza spelling (ء أ إ آ ؤ ئ) as
+    interchangeable, since which hamza-carrier a radical surfaces as is
+    an orthographic rule driven by neighboring vowels, not a different
+    letter. Any other letter must match exactly.
+    """
+
+    if radical_char in _HAMZA_FORMS:
+        return diac_char in _HAMZA_FORMS
+
+    return diac_char == radical_char
+
+
+def _build_wazn_from_diac(analysis, expected_root=None):
+    """
+    Reconstructs the ف-ع-ل template directly from `analysis`'s own
+    `diac` (fully-diacritized surface), walking a set of root radicals
+    in order and matching each one's first remaining occurrence
+    left-to-right in `diac` -- see the module comment above for why
+    this is more trustworthy than CAMeL's own `pattern` feature on
+    hamza/repeated-letter roots.
+
+    `expected_root` (the CORPUS's own root for this word, e.g. "أمن" --
+    same value camel_wazn already receives and uses for scoring) is
+    tried FIRST, ahead of analysis.get("root"). This matters because
+    CAMeL's own per-analysis root can itself be incomplete: for
+    مُؤْمِن CAMeL's analysis carries root "#.م.ن" -- literally marking
+    the hamza radical "unclear" -- so building off analysis["root"]
+    alone reproduces the same missing-radical problem this function
+    exists to route around. The corpus's root doesn't have that gap
+    (confirmed directly against quran.db's `roots` table: plain,
+    undotted, no "#" placeholders anywhere), and by the time this runs
+    the analysis has already been confirmed root-agreeing against
+    expected_root via _analysis_score, so it's a trustworthy source of
+    the FULL radical set even when CAMeL's own is partial. Falls back
+    to analysis.get("root") only if no expected_root was supplied.
+
+    Returns None (rather than a guessed-at wazn) if:
+      - there's no diac, and/or no usable root from either source (see
+        _radicals_from_root),
+      - the root has more radicals than _WAZN_SLOT_LETTERS covers,
+      - or any radical genuinely can't be found in the remaining diac
+        text at all -- which shouldn't happen for a real analysis, but
+        isn't assumed impossible, and is exactly the kind of case
+        that should fall back rather than show a wrong wazn.
+    """
+
+    diac = analysis.get("diac")
+    radicals = _radicals_from_root(expected_root) or _radicals_from_root(analysis.get("root"))
+
+    if not diac or not radicals or len(radicals) > len(_WAZN_SLOT_LETTERS):
+        return None
+
+    slot_letter_by_index = {}
+    search_from = 0
+
+    for slot, radical in enumerate(radicals):
+        found_at = None
+        for i in range(search_from, len(diac)):
+            if _letters_match(diac[i], radical):
+                found_at = i
+                break
+
+        if found_at is None:
+            return None
+
+        slot_letter_by_index[found_at] = _WAZN_SLOT_LETTERS[slot]
+        search_from = found_at + 1
+
+    return "".join(slot_letter_by_index.get(i, ch) for i, ch in enumerate(diac))
+
+
+# Plain-English labels for the wazns a reader most often runs into in the
+# Qur'an, keyed on the FULLY DIACRITIZED ف-ع-ل template exactly as
+# _fa_ala_template produces it -- deliberately not stripped of harakat,
+# because several noun and verb patterns share the identical bare
+# consonant skeleton and only the vowelling tells them apart (e.g. فاعل
+# is both the Form I active participle فَاعِل, "one who does [x]", and the
+# Form III perfect verb فَاعَلَ, "he did [x] [to/with someone]" -- stripping
+# diacritics would collide the two).
+#
+# This is intentionally NOT exhaustive -- Arabic derivational morphology
+# has dozens of minor/rare patterns beyond these -- it covers the common
+# noun/adjective shapes. Anything not listed here still gets *a* label
+# via _generic_wazn_label() below, just a less specific one. Extend this
+# table freely as gaps are noticed in real lookups.
+_NOUN_WAZN_LABELS = {
+    "فَاعِل": "Active participle — one who does the action",
+    "مَفْعُول": "Passive participle — one to whom the action is done",
+    "فَعَّال": "Intensive / professional noun — one who does it habitually",
+    "فَعُول": "Intensive active participle",
+    "فَعِيل": "Intensive adjective",
+    "فَعْلَان": "Adjective describing a state or condition",
+    "أَفْعَل": "Elative (comparative/superlative), or a color/defect adjective",
+    "فِعَال": "Verbal noun (masdar), Form I",
+    "فُعُول": "Verbal noun (masdar), Form I",
+    "مِفْعَال": "Instrument noun (intensive)",
+    "مِفْعَل": "Instrument noun",
+    "مَفْعَل": "Noun of place or time",
+    "مَفْعَلَة": "Noun of place or time",
+    "تَفْعِيل": "Verbal noun (masdar), Form II",
+    "مُفَعِّل": "Active participle, Form II",
+    "مُفَعَّل": "Passive participle, Form II",
+    "مُفَاعَلَة": "Verbal noun (masdar), Form III",
+    "مُفَاعِل": "Active participle, Form III",
+    "إِفْعَال": "Verbal noun (masdar), Form IV",
+    "مُفْعِل": "Active participle, Form IV",
+    "مُفْعَل": "Passive participle, Form IV",
+    "تَفَعُّل": "Verbal noun (masdar), Form V",
+    "مُتَفَعِّل": "Active participle, Form V",
+    "تَفَاعُل": "Verbal noun (masdar), Form VI",
+    "مُتَفَاعِل": "Active participle, Form VI",
+    "اِنْفِعَال": "Verbal noun (masdar), Form VII",
+    "مُنْفَعِل": "Active participle, Form VII",
+    "اِفْتِعَال": "Verbal noun (masdar), Form VIII",
+    "مُفْتَعِل": "Active participle, Form VIII",
+    "اِسْتِفْعَال": "Verbal noun (masdar), Form X",
+    "مُسْتَفْعِل": "Active participle, Form X",
+    "مُسْتَفْعَل": "Passive participle, Form X",
+}
+
+
+# What each derived "Form" (measure) typically adds to the bare root's
+# meaning -- keyed on the roman numeral exactly as it appears inside the
+# _NOUN_WAZN_LABELS strings above (e.g. "Form II" -> "II"). Form I has no
+# roman numeral in those strings (it's the unmarked base shape), so it's
+# looked up separately by _wazn_specific_note() below rather than being
+# matched out of a label. Form IX (colors/physical defects, e.g. اِحْمَرَّ
+# "to turn red") is rare enough in Qur'anic vocabulary that it's left out
+# rather than guessed at.
+_WAZN_FORM_MEANINGS = {
+    "I": "This is the base, unaugmented shape of the root — no letters added beyond the pattern's own vowelling.",
+    "II": "The root's middle letter is doubled. This usually makes the action causative or intensive — e.g. \u0639َلِمَ \"he knew\" becomes عَلَّمَ \"he taught\" (caused someone to know); كَسَرَ \"he broke\" becomes كَسَّرَ \"he smashed\" (broke intensively).",
+    "III": "A long alif is added after the root's 1st letter. This usually implies the action is directed at, done together with, or attempted against someone — e.g. كَتَبَ \"he wrote\" becomes كَاتَبَ \"he corresponded with [someone]\".",
+    "IV": "A hamza is prefixed to the root. This usually makes the action causative — e.g. خَرَجَ \"he went out\" becomes أَخْرَجَ \"he brought out\" (caused to go out).",
+    "V": "Form II with a ت prefixed. This is usually the reflexive or resultative counterpart of Form II — e.g. عَلَّمَ \"he taught\" becomes تَعَلَّمَ \"he learned\" (taught himself).",
+    "VI": "Form III with a ت prefixed. This usually implies the action happening mutually, between two or more parties — e.g. كَاتَبَ \"he corresponded with\" becomes تَكَاتَبَ \"they corresponded with each other\".",
+    "VII": "An ن is prefixed to the root. This gives a passive or reflexive sense — e.g. كَسَرَ \"he broke [something]\" becomes اِنْكَسَرَ \"it broke/got broken\" — and is never used with a human agent acting on someone else.",
+    "VIII": "A ت is inserted after the root's 1st letter. This usually gives a reflexive or \"middle voice\" sense, where the subject acts on or for itself — e.g. جَمَعَ \"he gathered [something]\" becomes اِجْتَمَعَ \"he gathered [himself, i.e. assembled]\".",
+    "IX": "The root's last letter is doubled after a helping alif. This shape is used for colours and physical defects — e.g. اِبْيَضَّ \"it turned white\", اِسْوَدَّ \"it turned black\".",
+    "XI": "Like Form IX but with a long ā before the doubled last letter. It is used for colours, with a stronger sense — e.g. اِدْهَامَّ \"it became deep dark green\".",
+    "X": "اِسْتَ is prefixed to the root. This usually implies seeking, requesting, or regarding something as having the root's quality — e.g. غَفَرَ \"he forgave\" becomes اِسْتَغْفَرَ \"he sought forgiveness\".",
+}
+
+
+def _wazn_specific_note(wazn, label):
+    """
+    Word-specific explanation for the wazn popover, meant to sit
+    *alongside* the general fa-la-system intro (data-fused-notes on the
+    info-badge in result.html) rather than replace it -- the intro
+    explains the ف-ع-ل placeholder convention in the abstract; this adds
+    a sentence about what THIS word's particular derived form (measure)
+    grammatically contributes.
+
+    `label` is whatever _NOUN_WAZN_LABELS/_generic_wazn_label already
+    produced (e.g. "Active participle, Form II" or the label-less
+    "Active participle — one who does the action" for a Form I shape).
+    Form I patterns don't spell out "Form I" in the label text the way
+    II-X do, so a wazn found in _NOUN_WAZN_LABELS with no roman numeral
+    in its label is treated as Form I; a wazn NOT in that curated table
+    (i.e. label came from the generic verb/adjective/noun fallback) gets
+    a shorter, non-form-specific sentence instead of a guessed Form
+    number -- see camel_wazn's docstring on why verb forms in particular
+    aren't reliably distinguishable from the pattern alone.
+
+    Returns None if there's nothing to say (no wazn/label at all).
+    """
+
+    if not wazn or not label:
+        return None
+
+    match = re.search(r"Form\s+([IVX]+)\b", label)
+    if match:
+        form = match.group(1)
+    elif wazn in _NOUN_WAZN_LABELS:
+        form = "I"
+    else:
+        form = None
+
+    # PATCH: the Form I sentence says no letters were added, so it only
+    # fits a shape built from ف ع ل and vowels alone (not مَفْعَل, أَفْعَل...)
+    if form == "I" and re.sub(r"[\u064b-\u0652\u0670اوي]", "", wazn) not in ("فعل", "فعلة"):
+        form = None
+
+    if form and form in _WAZN_FORM_MEANINGS:
+        return (
+            "For this word specifically, the pattern is {wazn} — {label}. "
+            "{form_meaning}"
+        ).format(wazn=wazn, label=label, form_meaning=_WAZN_FORM_MEANINGS[form])
+
+    return (
+        "For this word specifically, the pattern is {wazn} — {label}. "
+        "It shows where the root letters sit in the dictionary form of the "
+        "word, with ف, ع and ل standing for the 1st, 2nd and 3rd root letters."
+    ).format(wazn=wazn, label=label)
+
+
+# Plain-English Form labels for the ten classical verb "measures", keyed
+# on the fully diacritized PERFECT (past-tense, 3rd-person-masc-singular)
+# template -- i.e. the citation form Arabic dictionaries use, which is
+# also what _camel_guess_wazn in meanings.py prefers (it computes the
+# wazn from word["lemma"] when one is available, falling back to the raw
+# surface only when it isn't). That's deliberate here too: it means this
+# table only needs the ~15 perfect-tense shapes below rather than every
+# tense/mood/person combination _build_wazn_from_diac could otherwise
+# hand back (an imperfect verb's template carries its own ي/ت/أ/ن subject
+# prefix, e.g. Form IV imperfect يُفْعِلُ vs perfect أَفْعَلَ) -- those
+# still resolve, just via _generic_wazn_label's shorter fallback.
+#
+# Form I has three possible middle-vowel shapes depending on the root
+# (فَعَلَ/فَعِلَ/فَعُلَ) rather than one fixed pattern the way Forms II-X
+# do; all three are listed. Form IX (اِفْعَلَّ, colors/physical defects)
+# is left out for the same reason _WAZN_FORM_MEANINGS leaves it out --
+# rare enough in Qur'anic vocabulary that it's not worth guessing at.
+_VERB_WAZN_LABELS = {
+    "فَعَلَ": "Verb, Form I",
+    "فَعِلَ": "Verb, Form I",
+    "فَعُلَ": "Verb, Form I",
+    "فُعِلَ": "Verb, Form I (passive)",
+
+    "فَعَّلَ": "Verb, Form II",
+    "فُعِّلَ": "Verb, Form II (passive)",
+
+    "فَاعَلَ": "Verb, Form III",
+    "فُوعِلَ": "Verb, Form III (passive)",
+
+    "أَفْعَلَ": "Verb, Form IV",
+    "أُفْعِلَ": "Verb, Form IV (passive)",
+
+    "تَفَعَّلَ": "Verb, Form V",
+
+    "تَفَاعَلَ": "Verb, Form VI",
+
+    "اِنْفَعَلَ": "Verb, Form VII",
+
+    "اِفْتَعَلَ": "Verb, Form VIII",
+    "اُفْتُعِلَ": "Verb, Form VIII (passive)",
+
+    "اِسْتَفْعَلَ": "Verb, Form X",
+    "اُسْتُفْعِلَ": "Verb, Form X (passive)",
+}
+
+
+def _generic_wazn_label(pos, expected_voice):
+    """
+    Fallback label for a wazn that isn't in _NOUN_WAZN_LABELS -- most
+    often a verb (this table only curates noun/adjective shapes; verb
+    templates collide too heavily with noun ones on bare letters to
+    label reliably without deeper feature support) or an uncommon noun
+    shape. Built from whatever the corpus/CAMeL already tells us about
+    the word rather than guessing the specific pattern name.
+    """
+
+    pos = (pos or "").lower()
+
+    if pos == "verb":
+        return "Verb pattern (passive)" if expected_voice == "passive" else "Verb pattern"
+
+    if pos in ("noun", "noun_prop", "noun_num", "noun_quant"):
+        return "Noun pattern"
+
+    if pos.startswith("adj"):
+        return "Adjective pattern"
+
+    return "Word pattern"
+
+
+def _diac_matches_surface(analysis, surface):
+    """
+    True if `analysis`'s own fully-diacritized `diac` reduces to the same
+    consonant skeleton (letters + shadda, vowels/tanween stripped -- see
+    _disambig_key) as `surface` itself.
+
+    CAMeL can return several analyses that all share the corpus's
+    root+lemma but represent genuinely different inflected shapes of that
+    same lemma -- most commonly an energetic-mood (تَوْكِيد) form with a
+    heavy tawkid nun fused onto the final radical as an *extra*, non-root
+    ن. Those still tie with the plain form at tier 0 in _analysis_score
+    (same root, same lemma), so nothing there rules them out.
+
+    This matters specifically for camel_wazn: _build_wazn_from_diac
+    reconstructs the template from whichever analysis's `diac` it's
+    handed, letter-for-letter. If that analysis is secretly a different
+    inflected form of the lemma, its extra letters (and any shadda they
+    carry) land in the output as if they belonged to the displayed word.
+    Confirmed against a real lookup: أَمِنَ was coming back as فَعِلَّ
+    (spurious trailing shadda) instead of فَعِلَ, because the analysis
+    used to build the pattern wasn't actually أَمِنَ's own -- it was a
+    same-root/same-lemma analysis whose diac carried an extra ن.
+
+    Returns True if `surface` is falsy, so a caller with nothing to
+    compare against isn't blocked from using this analysis at all.
+    """
+
+    if not surface:
+        return True
+
+    return _disambig_key(analysis.get("diac")) == _disambig_key(surface)
+
+
+# ==========================================================
+# PATCH: wazn from the corpus's own grammatical tags + lemma
+# ==========================================================
+#
+# The audit found 4,262 words with a malformed wazn and 1,254 nouns given
+# a verb pattern. Causes:
+#   1. When _build_wazn_from_diac couldn't place every radical (hollow /
+#      defective / doubled roots: كون, قوي, صوب, ربب), the code fell back
+#      to CAMeL's own `pattern`, which just leaves the missing slot out --
+#      كانَ -> فالَ, قُوَّة -> فُوَّة, رَبّ -> فَعّ, الله -> اعلّٰل.
+#   2. The analysis was picked with vowel-blind matching, so a VERB
+#      analysis (خَلِقَ) could win for the NOUN lemma خَلْق -> فَعِلَ.
+#
+# The corpus already says what the word IS: the stem morpheme's features
+# carry the verb form (VF:1..10) for verbs, participles (ACT_PCPL /
+# PASS_PCPL) and verbal nouns (VN). For those, the classical wazn is FIXED
+# by the form -- مُصِيبَة is مُفْعِلَة and اِتَّقَى is اِفْتَعَلَ whatever the
+# spelling of the weak root -- so it is taken from the form, not guessed
+# from letters. Everything else is built letter-for-letter from the
+# corpus lemma; if any radical isn't literally written there (weak or
+# doubled root, a long vowel standing where a radical would be, fused آ,
+# assimilation), the real wazn depends on the underlying form and NO wazn
+# is returned rather than a wrong one.
+
+_QURANIC_MARKS_RE = re.compile('[ۖ-ۭـ]')
+_HARAKAT = set('ًٌٍَُِّْ')
+
+_FORM_PERFECT = {2: "فَعَّلَ", 3: "فَاعَلَ", 4: "أَفْعَلَ", 5: "تَفَعَّلَ", 6: "تَفَاعَلَ",
+                 7: "اِنْفَعَلَ", 8: "اِفْتَعَلَ", 9: "اِفْعَلَّ", 10: "اِسْتَفْعَلَ"}
+_FORM_ROMAN = {1: "I", 2: "II", 3: "III", 4: "IV", 5: "V", 6: "VI", 7: "VII", 8: "VIII", 9: "IX", 10: "X"}
+_FORM_ACT_PCPL = {1: "فَاعِل", 2: "مُفَعِّل", 3: "مُفَاعِل", 4: "مُفْعِل", 5: "مُتَفَعِّل", 6: "مُتَفَاعِل",
+                  7: "مُنْفَعِل", 8: "مُفْتَعِل", 9: "مُفْعَلّ", 10: "مُسْتَفْعِل"}
+_FORM_PASS_PCPL = {1: "مَفْعُول", 2: "مُفَعَّل", 3: "مُفَاعَل", 4: "مُفْعَل", 5: "مُتَفَعَّل", 6: "مُتَفَاعَل",
+                   7: "مُنْفَعَل", 8: "مُفْتَعَل", 10: "مُسْتَفْعَل"}
+# Only the derived forms whose verbal noun has a single fixed shape.
+_FORM_VN = {4: "إِفْعَال", 5: "تَفَعُّل", 6: "تَفَاعُل", 7: "اِنْفِعَال", 8: "اِفْتِعَال", 10: "اِسْتِفْعَال"}
+
+
+def _corpus_wazn_template(lemma, root):
+    radicals = _radicals_from_root(root)
+    if not lemma or not radicals or len(radicals) > len(_WAZN_SLOT_LETTERS):
+        return None
+
+    text = _QURANIC_MARKS_RE.sub('', _quranic_to_msa_orthography(lemma))
+    out = list(text)
+    search_from = 0
+    for slot, radical in enumerate(radicals):
+        found_at = None
+        for i in range(search_from, len(text)):
+            if _letters_match(text[i], radical):
+                found_at = i
+                break
+        if found_at is None:
+            return None
+        ch = text[found_at]
+        nxt = text[found_at + 1] if found_at + 1 < len(text) else ""
+        prv = text[found_at - 1] if found_at > 0 else ""
+        # fused hamza+alif: one letter is a radical AND an augment
+        if ch == 'آ':
+            return None
+        # assimilated first radical (اِتَّبَعَ, يَذَّكَّرُ)
+        if slot == 0 and 'ّ' in text[found_at + 1:found_at + 3]:
+            return None
+        # و/ي written as a LONG VOWEL (no vowel of its own, after a damma /
+        # kasra) is not the consonantal radical: مُبِين is مُفْعِل, not مُفِعل
+        if ch in 'وي' and nxt not in _HARAKAT and prv in ('ُ', 'ِ'):
+            return None
+        out[found_at] = _WAZN_SLOT_LETTERS[slot]
+        search_from = found_at + 1
+
+    wazn = "".join(out)
+    # A letter directly before a long alif carries fatha; corpus lemmas
+    # sometimes omit it (عالَم).
+    fixed = []
+    for i, ch in enumerate(wazn):
+        fixed.append(ch)
+        if (i + 1 < len(wazn) and wazn[i + 1] == 'ا' and ch not in _HARAKAT
+                and ch not in 'اأإآٱٰ'):
+            fixed.append('َ')
+    wazn = "".join(fixed)
+
+    bare = re.sub('[ً-ٰٕ]', '', wazn)
+    if bare.count("ف") != 1 or bare.count("ع") != 1 or not (bare.find("ف") < bare.find("ع") < bare.rfind("ل")):
+        return None
+    return wazn
+
+
+def _label_key(wazn):
+    """Comparison key for the label tables: ignores vowel marks the corpus
+    lemmas sometimes leave out (fatha before alif, kasra/damma on a leading
+    hamzat-wasl alif, sukun)."""
+    if not wazn:
+        return wazn
+    k = wazn.replace('ٱ', 'ا').replace('َا', 'ا').replace('ْ', '')
+    if k[:2] in ('اِ', 'اُ'):
+        k = 'ا' + k[2:]
+    return k
+
+
+_NOUN_LABELS_BY_KEY = {_label_key(k): v for k, v in _NOUN_WAZN_LABELS.items()}
+_VERB_LABELS_BY_KEY = {_label_key(k): v for k, v in _VERB_WAZN_LABELS.items()}
+_FORM_I_PERFECT_KEYS = {_label_key(k) for k in ("فَعَلَ", "فَعِلَ", "فَعُلَ")}
+
+
+def _features_info(features):
+    parts = (features or "").split("|")
+    vf = None
+    for p in parts:
+        if p.startswith("VF:"):
+            try:
+                vf = int(p[3:])
+            except ValueError:
+                vf = None
+    return parts, vf
+
+
+def camel_wazn(surface, expected_root=None, expected_lemma=None, expected_pos=None,
+               expected_voice=None, features=None):
+    """PATCHED: see the module note above. Returns the same dict shape as
+    before, or None when no wazn can be given with certainty."""
+    if not expected_root or not expected_lemma:
+        return None
+
+    parts, vf = _features_info(features)
+    is_verb = (expected_pos or "").upper().startswith("V")
+    feminine = _QURANIC_MARKS_RE.sub('', expected_lemma).rstrip('ً-ْ').endswith('ة') or \
+        re.sub('[ً-ْ]', '', expected_lemma).endswith('ة')
+
+    wazn = label = None
+    if is_verb:
+        if vf and vf >= 2:
+            wazn = _FORM_PERFECT.get(vf)
+            label = f"Verb, Form {_FORM_ROMAN[vf]}" if wazn else None
+        else:
+            t = _corpus_wazn_template(expected_lemma, expected_root)
+            if t:
+                # perfect 3MS citation form ends in fatha; corpus lemmas
+                # are sometimes written with another final vowel (عَقَلُ)
+                t = re.sub('[ً-ْ]*$', '', t) + 'َ'
+                if _label_key(t) in _FORM_I_PERFECT_KEYS:
+                    wazn, label = t, "Verb, Form I"
+    elif vf and ("ACT_PCPL" in parts or "PASS_PCPL" in parts):
+        table = _FORM_ACT_PCPL if "ACT_PCPL" in parts else _FORM_PASS_PCPL
+        base = table.get(vf)
+        if base:
+            wazn = base + ('َة' if feminine else '')
+            kind = "Active" if "ACT_PCPL" in parts else "Passive"
+            label = (f"{kind} participle — " + ("one who does the action" if kind == "Active" else "one to whom the action is done")) \
+                if vf == 1 else f"{kind} participle, Form {_FORM_ROMAN[vf]}"
+    elif vf and "VN" in parts and vf in _FORM_VN and not feminine:
+        wazn = _FORM_VN[vf]
+        label = f"Verbal noun (masdar), Form {_FORM_ROMAN[vf]}"
+    else:
+        t = _corpus_wazn_template(expected_lemma, expected_root)
+        if t:
+            wazn = t
+            table_label = _NOUN_LABELS_BY_KEY.get(_label_key(t))
+            # A shape in the label table only says what words of that shape
+            # USUALLY are; كِتَاب has the masdar shape فِعَال and سَبِيل the
+            # adjective shape فَعِيل without being either. So a label that
+            # names a word class is only shown when the corpus's own tags
+            # agree with it.
+            adjective_like = table_label and table_label.startswith(
+                ("Intensive adjective", "Adjective describing", "Intensive active participle",
+                 "Intensive / professional noun", "Elative"))
+            if "VN" in parts:
+                label = f"Verbal noun (masdar), Form {_FORM_ROMAN.get(vf or 1, 'I')}"
+            elif "ADJ" in parts:
+                label = table_label if adjective_like else "Adjective pattern"
+            elif table_label and table_label.startswith("Elative"):
+                label = table_label   # أَفْعَل on a non-verb: elative / colour adjective
+            else:
+                label = "Noun pattern"
+
+    if not wazn:
+        return None
+    note = _wazn_specific_note(wazn, label)
+    return {"wazn": wazn, "wazn_label": label, "wazn_note": note}
+
+
+def _old_camel_wazn(surface, expected_root=None, expected_lemma=None, expected_pos=None, expected_voice=None):
+    """
+    Best available wazn (morphological pattern) for `surface` -- meant to
+    be called the same way as camel_stem_gloss: with the STEM morpheme's
+    own surface, and the corpus's own root/lemma/pos/voice as
+    disambiguation hints (see camel_stem_gloss's docstring for why --
+    an undiacritized surface routinely has several unrelated CAMeL
+    analyses spanning different roots, and _analysis_score is what picks
+    the one the corpus already confirms is correct, exactly as it does
+    for the stem gloss).
+
+    Returns a dict:
+        {"wazn": "فَاعِل", "wazn_label": "Active participle — ...", "wazn_note": "..."}
+    or None if CAMeL has no analysis at all, or no analysis scoring
+    tier < 3 (i.e. root-agreeing -- see _analysis_score) yields a
+    trustworthy wazn -- see _build_wazn_from_diac's docstring for what
+    "trustworthy" means and why the wazn is deliberately suppressed
+    rather than guessed at when it isn't confident.
+    """
+
+    analyses = camel_lookup(surface)
+
+    if not analyses:
+        return None
+
+    def best_pattern(pool):
+        if not pool:
+            return None
+
+        scored = sorted(
+            pool,
+            key=lambda a: _analysis_score(a, expected_root, expected_lemma, expected_pos, expected_voice),
+        )
+
+        # Split into analyses that are actually the same word as `surface`
+        # (see _diac_matches_surface) and everything else that merely ties
+        # on root/lemma -- e.g. an energetic-mood variant of the same
+        # lemma. The matching group is tried first and, within it, order
+        # is still governed by the existing tier/voice_penalty sort; the
+        # non-matching group is kept only as a last resort, for the rare
+        # case where CAMeL genuinely has no analysis whose diac matches
+        # the surface at all (favoring some wazn over none).
+        matching_ids = {id(a) for a in scored if _diac_matches_surface(a, surface)}
+        matching = [a for a in scored if id(a) in matching_ids]
+        fallback = [a for a in scored if id(a) not in matching_ids]
+
+        for candidate_pool in (matching, fallback):
+            for analysis in candidate_pool:
+                score = _analysis_score(analysis, expected_root, expected_lemma, expected_pos, expected_voice)
+
+                # Tier 3 means the root doesn't agree with the corpus at
+                # all -- CAMeL guessing blind on an unrelated homograph.
+                # Stop rather than build a confidently wrong pattern from
+                # it (same reasoning as camel_stem_gloss's best_gloss
+                # loop). Each candidate_pool is still sorted by score, so
+                # once a tier-3 analysis appears, nothing later in that
+                # same pool can be better.
+                if score[0] >= 3:
+                    break
+
+                # Prefer reconstructing the wazn ourselves from diac+root
+                # (see the module comment above _HAMZA_FORMS) -- CAMeL's
+                # own `pattern` feature is only used as a fallback, for
+                # analyses that somehow lack a usable diac/root pair.
+                wazn = _build_wazn_from_diac(analysis, expected_root) or _fa_ala_template(analysis.get("pattern"))
+                if wazn:
+                    return analysis, wazn
+
+        return None
+
+    # Same noun_prop two-pass handling as camel_stem_gloss: excluded on
+    # the first pass so a personal name doesn't win an arbitrary tie
+    # against the real analysis, but reconsidered on a second pass if the
+    # first pass found nothing at all.
+    non_proper = [a for a in analyses if (a.get("pos") or "").lower() != "noun_prop"]
+
+    found = best_pattern(non_proper) or best_pattern(analyses)
+    if not found:
+        return None
+
+    analysis, wazn = found
+
+    label = _NOUN_WAZN_LABELS.get(wazn) or _VERB_WAZN_LABELS.get(wazn) or _generic_wazn_label(analysis.get("pos"), expected_voice)
+    note = _wazn_specific_note(wazn, label)
+
+    return {"wazn": wazn, "wazn_label": label, "wazn_note": note}
