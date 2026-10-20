@@ -71,7 +71,7 @@ _ROM = {
 _VOW = {"َ": "a", "ِ": "i", "ُ": "u", "ً": "an", "ٍ": "in", "ٌ": "un"}
 
 
-def romanise(word, keep_tanwin=False):
+def romanise(word, keep_tanwin=False, raw=False):
     """Loose romanisation of a vowelled Arabic word, in the same simplified
     spelling the typed text is normalised to (see _norm_latin)."""
     text = (word or "").replace("ٰ", "ا")
@@ -94,7 +94,7 @@ def romanise(word, keep_tanwin=False):
         elif ch in "اى" and i > 0 and letters[i - 1] == "\u064B":
             pass                                   # the alif that carries -an
         elif ch in _VOW:
-            if i < last:
+            if i < last or keep_tanwin:            # keep_tanwin: the full ending (allahu, sabrun)
                 piece = _VOW[ch]
         elif ch == "\u0651":          # shadda: double the previous consonant
             if out and out[-1] and out[-1][-1] not in "aiuAIU":
@@ -120,7 +120,20 @@ def romanise(word, keep_tanwin=False):
     if r.startswith("l") and text.startswith("ٱل"):
         r = "a" + r                    # article: ٱلْ -> al
         rl = "a" + rl
+    if raw:
+        return r
     return _squash(r), _squash_long(rl)
+
+
+def doubled_form(word):
+    """Romanisation that keeps doubled (shadda) consonants: وَٱللَّهُ 'wallah'
+    vs وَلَهُۥ 'walah' -- the squashed forms can't tell those apart."""
+    r = romanise_raw(word)
+    return re.sub(r"([aiu])\1+", r"\1", r)
+
+
+def romanise_raw(word):
+    return romanise(word, raw=True)
 
 
 def _squash_long(s):
@@ -240,8 +253,10 @@ def _index():
         k = arabic_key(word)
         if k:
             rom, rom_long = romanise(word)
-            if re.search("[\u064B-\u064D]", word):
-                rom = (rom, romanise(word, keep_tanwin=True)[0])
+            rom_long = (rom_long, doubled_form(word))
+            full = romanise(word, keep_tanwin=True)[0]
+            if full != rom:
+                rom = (rom, full)
             idx.setdefault(k, []).append((word, n, is_lemma, rom, rom_long))
     return idx
 
@@ -279,6 +294,9 @@ def suggest(query, limit=8):
     typed_long = _squash_long(re.sub(r"[KCGDT]", lambda m: {"K": "kh", "C": "sh", "G": "gh", "D": "dh", "T": "th"}[m.group()],
                                      _norm_latin(marked)).replace("§", "q").replace("①", "A").replace("②", "I").replace("③", "U"))
     typed_long = typed_long.replace("dh", "th")
+    typed_dbl = re.sub(r"[KCGDT]", lambda m: {"K": "kh", "C": "sh", "G": "gh", "D": "dh", "T": "th"}[m.group()],
+                       _norm_latin(_strip_accents(query.lower()).replace("q", "§"))).replace("§", "q")
+    typed_dbl = re.sub(r"([aiu])\1+", r"\1", typed_dbl).replace("dh", "th")
     keys = latin_keys(query)
     if not keys:
         return []
@@ -287,6 +305,7 @@ def suggest(query, limit=8):
     def consider(key, penalty, no_article=False, strip_clitic=False):
         for word, n, is_lemma, rom, rom_long in idx.get(key, ()):
             rom, rom_tan = rom if isinstance(rom, tuple) else (rom, None)
+            rom_long, rom_dbl = rom_long
             if no_article and word.startswith(("ٱل", "ال")):
                 continue
             # th / dh are both used for ذ (and th for ث): compare them as one sound
@@ -310,6 +329,14 @@ def suggest(query, limit=8):
             if "q" not in typed_plain:
                 rl = rl.replace("q", "k")
             sim = 0.75 * sim + 0.25 * SequenceMatcher(None, typed_long, rl).ratio()
+            # doubled letters typed (allahu, rabbi, jannah) should prefer a shadda
+            rd = rom_dbl.replace("dh", "th")
+            if "q" not in typed_plain:
+                rd = rd.replace("q", "k")
+            dsim = SequenceMatcher(None, typed_dbl, rd).ratio()
+            if strip_clitic and len(rd) > 3:
+                dsim = max(dsim, SequenceMatcher(None, typed_dbl, rd[2:]).ratio())
+            sim = 0.85 * sim + 0.15 * dsim
             if "th" in r:   # ذ is also often typed z ("allazina", "zikr")
                 sim = max(sim, SequenceMatcher(None, typed_plain, r.replace("th", "z")).ratio() - 0.03)
             if typed_plain.endswith("t") and r.endswith(("ah", "a")):
@@ -441,7 +468,20 @@ def _merge_articles(tokens):
             out[-1] = "al" + t
         else:
             out.append(t)
-    return out
+    # 'fa sabrun', 'wa alladhina', 'bi smi': these one-letter words are always
+    # written joined to the next word in Arabic (فَصَبْرٌ, وَٱلَّذِينَ, بِسْمِ)
+    joined = []
+    for t in out:
+        if joined and joined[-1].lower() in _JOINERS:
+            joined[-1] = joined[-1] + t
+        else:
+            joined.append(t)
+    if len(joined) > 1 and joined[-1].lower() in _JOINERS:
+        joined[-2] = joined[-2] + joined.pop()
+    return joined
+
+
+_JOINERS = {"fa", "wa", "bi", "li", "ka", "sa", "a", "wal", "fal", "bil", "lil", "wabi", "fabi", "wali", "fali"}
 
 
 @lru_cache(maxsize=4096)
