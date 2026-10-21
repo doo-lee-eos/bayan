@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}{{ lesson.number }} {{ lesson.title }} · Bayan{% endblock %}
+
+{% block content %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/learn.css') }}">
+
+{% set user = current_user() %}
+
+<main class="learn lesson-page" data-lesson="{{ lesson.slug }}">
+    {% include "_learn_account.html" %}
+
+    <header class="lesson-head">
+        <div class="eyebrow">LEVEL {{ lesson.level }} · {{ lesson.level_title|upper }}</div>
+        <h1><span class="num">{{ lesson.number }}</span> {{ lesson.title_html }}</h1>
+        {% if lesson.goal %}<p class="goal">{{ lesson.goal_html }}</p>{% endif %}
+        {% if lesson.minutes %}<div class="mins">About {{ lesson.minutes }} minutes</div>{% endif %}
+    </header>
+
+    <article class="lesson-body">
+        {% for b in lesson.blocks %}
+
+        {% if b.type == 'text' %}
+        <p class="text">{{ b.html }}</p>
+
+        {% elif b.type == 'tip' %}
+        <aside class="tip">{{ b.html }}</aside>
+
+        {% elif b.type == 'table' %}
+        <div class="table-wrap">
+            <table class="lesson-table">
+                <thead><tr>{% for h in b.head_html %}<th>{{ h }}</th>{% endfor %}</tr></thead>
+                <tbody>
+                    {% for row in b.rows_html %}
+                    <tr>{% for c in row %}<td>{{ c }}</td>{% endfor %}</tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% elif b.type == 'letters' %}
+        <div class="letters">
+            {% for l in b.letters %}
+            <div class="letter{% if not l.joins %} nojoin{% endif %}">
+                <div class="glyph" lang="ar">{{ l.letter }}</div>
+                <div class="name">{{ l.name }}</div>
+                <div class="sound">{{ l.sound }}</div>
+                <div class="forms" lang="ar" dir="rtl" title="alone · start · middle · end">
+                    {% for f in l.forms %}<span>{{ f }}</span>{% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <p class="letters-key"><span class="key nojoin"></span> doesn't join to the letter after it. Forms shown: alone · start · middle · end.</p>
+
+        {% elif b.type == 'heading' %}
+        <h2 class="block-heading">{{ b.html }}</h2>
+
+        {% elif b.type == 'family' %}
+        {% set f = b.family %}
+        <div class="family">
+            <div class="family-head">
+                <a class="family-root" href="{{ f.root_href }}" lang="ar" dir="rtl" title="Open the root page">{{ f.root_spaced }}</a>
+                {% if f.means %}<span class="family-means">{{ f.means }}</span>{% endif %}
+            </div>
+            <div class="family-words">
+                {% for w in f['items'] %}
+                <a class="fw" href="{{ w.href }}" title="Open {{ w.word }} in Bayan">
+                    <span class="fw-word">{{ w.html }}</span>
+                    <span class="fw-gloss">{{ w.gloss }}</span>
+                    <span class="fw-meta"><span lang="ar" dir="rtl">{{ w.wazn }}</span> · ×{{ w.freq }}</span>
+                </a>
+                {% endfor %}
+            </div>
+            {% if b.note %}<p class="block-note">{{ b.note_html }}</p>{% endif %}
+        </div>
+
+        {% elif b.type == 'pattern' %}
+        {% set pt = b.pattern %}
+        <div class="pattern-set">
+            <div class="pattern-head">
+                <span class="pattern-word">{{ pt.pattern_html }}</span>
+                <span class="pattern-say">{{ pt.say }}</span>
+                <span class="pattern-role">{{ pt.role }}</span>
+            </div>
+            <div class="table-wrap">
+                <table class="pattern-table">
+                    <thead><tr><th>Root</th><th>Verb</th><th>On {{ pt.say }}</th><th>Meaning</th><th class="num">In the Qur'an</th></tr></thead>
+                    <tbody>
+                    {% for r in pt.rows %}
+                    <tr>
+                        <td class="ar-cell" lang="ar" dir="rtl">{{ r.word.root_spaced }}</td>
+                        <td>{% if r.verb %}<span class="ar">{{ r.verb.word }}</span> <span class="muted">{{ r.means }}</span>{% elif r.means %}<span class="muted">{{ r.means }}</span>{% endif %}</td>
+                        <td class="ar-cell"><a href="{{ r.word.href }}">{{ r.word.html }}</a></td>
+                        <td>{{ r.word.gloss }}</td>
+                        <td class="num">×{{ r.word.freq }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if b.note %}<p class="block-note">{{ b.note_html }}</p>{% endif %}
+        </div>
+
+        {% elif b.type == 'plurals' %}
+        {% set pt = b.plurals %}
+        <div class="pattern-set">
+            <div class="pattern-head">
+                <span class="pattern-word">{{ pt.pattern_html }}</span>
+                <span class="pattern-say">{{ pt.say }}</span>
+                <span class="pattern-role">plural</span>
+            </div>
+            <div class="table-wrap">
+                <table class="pattern-table plural-table">
+                    <thead><tr><th>Root</th><th>Singular</th><th>Plural</th><th>Meaning</th><th class="num">In the Qur'an</th></tr></thead>
+                    <tbody>
+                    {% for r in pt.rows %}
+                    <tr>
+                        <td class="ar-cell" lang="ar" dir="rtl">{{ r.root_spaced }}</td>
+                        <td class="ar-cell"><a href="{{ r.sing.href }}">{{ r.sing.html }}</a> <span class="muted small" lang="ar">{{ r.sing.wazn }}</span></td>
+                        <td class="ar-cell"><a href="{{ r.href }}">{{ r.html }}</a></td>
+                        <td>{{ r.gloss }}</td>
+                        <td class="num">×{{ r.freq }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if b.note %}<p class="block-note">{{ b.note_html }}</p>{% endif %}
+        </div>
+
+        {% elif b.type == 'scale' %}
+        <div class="scale">
+            {% for s in b.scale %}
+            <div class="scale-item">
+                <div class="scale-grid" dir="rtl" style="grid-template-columns: repeat({{ s.cols|length }}, auto)">
+                    {% for c in s.cols %}<span class="sc-pat{% if c.slot is not none %} slot s{{ c.slot }}{% endif %}" lang="ar">{{ c.pattern }}</span>{% endfor %}
+                    {% for c in s.cols %}<span class="sc-word{% if c.slot is not none %} slot s{{ c.slot }}{% endif %}" lang="ar">{{ c.word }}</span>{% endfor %}
+                </div>
+                <a class="scale-result" href="{{ s.word.href }}">
+                    <span class="scale-whole">{{ s.word.html }}</span>
+                    <span class="scale-gloss">{{ s.word.gloss }}</span>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% elif b.type == 'builder' %}
+        <div class="builder" data-builder='{{ b.builder|tojson }}'>
+            <div class="builder-row">
+                <div class="builder-label">Root</div>
+                <div class="builder-choices roots">
+                    {% for r in b.builder.roots %}<button type="button" class="chip-btn" data-root="{{ r.key }}" lang="ar">{{ r.label }}</button>{% endfor %}
+                </div>
+            </div>
+            <div class="builder-row">
+                <div class="builder-label">Pattern</div>
+                <div class="builder-choices pats">
+                    {% for p in b.builder.patterns %}<button type="button" class="chip-btn" data-pattern="{{ p.key }}" lang="ar">{{ p.label }}</button>{% endfor %}
+                </div>
+            </div>
+            <div class="builder-out" aria-live="polite">
+                <div class="builder-word"></div>
+                <div class="builder-info">Pick a root and a pattern.</div>
+            </div>
+            {% if b.note %}<p class="block-note">{{ b.note_html }}</p>{% endif %}
+        </div>
+
+        {% elif b.type == 'examples' %}
+        <div class="examples">
+            {% for ex in b['items'] %}
+            <div class="example">
+                <a class="ex-word" href="{{ url_for('search', q=ex.word) }}" lang="ar" dir="rtl" title="Open {{ ex.word }} in Bayan">{{ ex.word }}</a>
+                <div class="ex-info">
+                    <div class="ex-say">{{ ex.say }}</div>
+                    <div class="ex-means">{{ ex.means }}</div>
+                    {% if ex.note %}<div class="ex-note">{{ ex.note_html }}</div>{% endif %}
+                </div>
+                <details class="ex-verse">
+                    <summary>In context · {{ ex.ref }}</summary>
+                    <p class="verse" lang="ar" dir="rtl">{% for w in ex.verse %}{% if w.hit %}<mark>{{ w.text }}</mark>{% else %}{{ w.text }}{% endif %} {% endfor %}</p>
+                    {% if ex.translation %}<p class="translation">{{ ex.translation }} <span class="src">(Sahih International)</span></p>{% endif %}
+                </details>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% endfor %}
+    </article>
+
+    {% if lesson.quiz.count %}
+    <section class="quiz" aria-labelledby="quiz-title">
+        <h2 id="quiz-title">Check yourself</h2>
+        <p class="quiz-intro">{{ lesson.quiz.count }} questions{% if lesson.quiz.pool %}, picked fresh each time you try{% endif %}. Pick an answer to see whether you're right and why.</p>
+        <ol class="questions"></ol>
+        <noscript><p>The questions need JavaScript switched on.</p></noscript>
+        <div class="quiz-result" hidden>
+            <div class="score-line"></div>
+            <button type="button" class="btn retry">{% if lesson.quiz.pool %}New questions{% else %}Try again{% endif %}</button>
+        </div>
+    </section>
+    <script id="quiz-data" type="application/json">{{ lesson.quiz|tojson }}</script>
+    {% endif %}
+
+    <section class="notes" aria-labelledby="notes-title">
+        <h2 id="notes-title">Your notes</h2>
+        <p class="notes-help">
+            {% if user %}Saved to your account as you type.
+            {% else %}Saved in this browser. <a href="{{ url_for('signup', next=request.path) }}">Create an account</a> to keep them on every device.{% endif %}
+        </p>
+        <textarea class="note-box" rows="5" placeholder="Anything to remember or come back to — a word that tripped you up, a question to look into…" maxlength="20000"></textarea>
+        <div class="note-status" aria-live="polite"></div>
+    </section>
+
+    <nav class="lesson-nav">
+        {% if lesson.prev %}
+        <a class="prev" href="{{ url_for('lesson', slug=lesson.prev.slug) }}"><span class="nav-label">← Previous</span><span class="nav-title">{{ lesson.prev.number }} {{ lesson.prev.title_html }}</span></a>
+        {% else %}<span></span>{% endif %}
+        {% if lesson.next %}
+        <a class="next" href="{{ url_for('lesson', slug=lesson.next.slug) }}"><span class="nav-label">Next →</span><span class="nav-title">{{ lesson.next.number }} {{ lesson.next.title_html }}</span></a>
+        {% else %}
+        <a class="next" href="{{ url_for('learn') }}"><span class="nav-label">Done →</span><span class="nav-title">Back to the course</span></a>
+        {% endif %}
+    </nav>
+</main>
+
+<script id="learn-state" type="application/json">{{ {
+    "signedIn": user is not none,
+    "csrf": csrf_token(),
+    "server": state,
+    "order": course.order,
+    "titles": course.titles,
+    "lesson": lesson.slug
+}|tojson }}</script>
+<script src="{{ url_for('static', filename='js/learn.js') }}" defer></script>
+{% endblock %}

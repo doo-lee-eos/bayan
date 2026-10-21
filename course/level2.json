@@ -1,0 +1,785 @@
+{
+  "lessons": [
+    {
+      "slug": "word-pieces",
+      "number": "2.1",
+      "title": "One word, several pieces",
+      "minutes": 7,
+      "goal": "See how small words join onto the front and back of an Arabic word, and how Bayan shows the pieces.",
+      "blocks": [
+        {
+          "type": "text",
+          "md": "In English, \"and in the hereafter\" is four words. In Arabic it is **one**: the small words for \"and\", \"in\" and \"the\" are joined onto the front of the noun."
+        },
+        {
+          "type": "examples",
+          "items": [
+            {
+              "word": "وَبِٱلْءَاخِرَةِ",
+              "ref": "2:4",
+              "say": "wa-bi-l-ākhirati",
+              "means": "and in the Hereafter",
+              "note": "وَ (and) + بِ (in) + ٱلْ (the) + ءَاخِرَة (Hereafter)."
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "md": "Every Arabic word has a **main body** (the stem, which carries the meaning) and can have **prefixes** before it and **suffixes** after it. {{stat:affix_pct}} of the {{stat:words}} words in the Qur'an carry at least one of them, so learning these pieces pays off on almost every line."
+        },
+        {
+          "type": "examples",
+          "items": [
+            {
+              "word": "فَصَبْرٌ",
+              "ref": "12:18",
+              "say": "fa-ṣabrun",
+              "means": "so patience",
+              "note": "فَ (so) + صَبْرٌ (patience)."
+            },
+            {
+              "word": "خَلَقَكُمْ",
+              "ref": "2:21",
+              "say": "khalaqa-kum",
+              "means": "(He) created you",
+              "note": "خَلَقَ (He created) + ـكُمْ (you, plural)."
+            },
+            {
+              "word": "قُلُوبِهِمْ",
+              "ref": "2:7",
+              "say": "qulūbi-him",
+              "means": "their hearts",
+              "note": "قُلُوبِ (hearts) + ـهِمْ (their)."
+            }
+          ]
+        },
+        {
+          "type": "tip",
+          "md": "Tap any example to open its Bayan page. The top of the page splits the word into **PREFIX**, **MAIN BODY** and **SUFFIX**, with a card explaining each piece."
+        }
+      ],
+      "quiz": [
+        {
+          "q": "How many English words is وَبِٱلْءَاخِرَةِ?",
+          "options": [
+            "One",
+            "Two",
+            "Four: and in the Hereafter"
+          ],
+          "answer": 2,
+          "explain": "وَ + بِ + ٱلْ + ءَاخِرَة = \"and in the Hereafter\"."
+        },
+        {
+          "q": "Which part of a word carries its main meaning?",
+          "options": [
+            "The prefix",
+            "The main body (stem)",
+            "The suffix"
+          ],
+          "answer": 1,
+          "explain": "The stem carries the meaning; prefixes and suffixes add small words like \"and\", \"the\" or \"their\"."
+        },
+        {
+          "q": "In خَلَقَكُمْ, what does ـكُمْ add?",
+          "options": [
+            "\"and\"",
+            "\"you\" (plural)",
+            "\"the\""
+          ],
+          "answer": 1,
+          "explain": "ـكُمْ is the pronoun \"you\" (plural): \"He created you\"."
+        }
+      ]
+    },
+    {
+      "slug": "wa-fa",
+      "number": "2.2",
+      "title": "وَ \"and\" and فَ \"so\"",
+      "minutes": 7,
+      "goal": "Recognise the two most common joined words and the oath meaning of وَ.",
+      "blocks": [
+        {
+          "type": "text",
+          "md": "**وَ (wa) \"and\"** is the most common prefix in the Qur'an — it appears {{stat:waw}} times. It is never written on its own; it always joins the next word."
+        },
+        {
+          "type": "examples",
+          "items": [
+            {
+              "word": "وَقَالَ",
+              "ref": "2:118",
+              "say": "wa-qāla",
+              "means": "and (he) said",
+              "note": "وَ + قَالَ."
+            },
+            {
+              "word": "وَرُسُلِهِۦ",
+              "ref": "2:98",
+              "say": "wa-rusulihī",
+              "means": "and His messengers",
+              "note": "وَ + رُسُلِ + ـهِۦ: three pieces."
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "md": "At the start of a sūrah, وَ before a noun often means **\"By ...!\"** — an oath:"
+        },
+        {
+          "type": "examples",
+          "items": [
+            {
+              "word": "وَٱلْعَصْرِ",
+              "ref": "103:1",
+              "say": "wal-ʿaṣri",
+              "means": "By the time!",
+              "note": "Sūrat al-ʿAṣr opens with an oath."
+            },
+            {
+              "word": "وَٱلشَّمْسِ",
+              "ref": "91:1",
+              "say": "wash-shamsi",
+              "means": "By the sun!",
+              "note": "Note the sun letter ش."
+            },
+            {
+              "word": "وَٱلضُّحَىٰ",
+              "ref": "93:1",
+              "say": "waḍ-ḍuḥā",
+              "means": "By the morning brightness!",
+              "note": "ض is a sun letter too."
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "md": "**فَ (fa) \"so, then\"** links two things in order, or shows a result. It appears {{stat:fa}} times."
+        },
+        {
+          "type": "examples",
+          "items": [
+            {
+              "word": "فَقَالَ",
+              "ref": "2:31",
+              "say": "fa-qāla",
+              "means": "then (He) said",
+              "note": "One thing happened, then the next."
+            },
+            {
+              "word": "فَصَبْرٌ",
+              "ref": "12:18",
+              "say": "fa-ṣabrun",
+              "means": "so, patience (is fitting)",
+              "note": "Yaʿqūb's reply in 12:18: فَ shows what follows from what came before."
+            }
+          ]
+        },
+        {
+          "type": "tip",
+          "md": "Read the vowel too: وَ and فَ always have a fatḥa. A word that starts with و or ف with another vowel (e.g. فِي \"in\") is not this prefix."
+        }
+      ],
+      "quiz": [
+        {
+          "q": "What does وَٱلْعَصْرِ mean at the start of Sūrat al-ʿAṣr?",
+          "options": [
+            "And the time",
+            "By the time!",
+            "So the time"
+          ],
+          "answer": 1,
+          "explain": "At the opening of a sūrah, وَ before a noun is an oath: \"By the time!\""
+        },
+        {
+          "q": "What does فَ usually add?",
+          "options": [
+            "\"and\"",
+            "\"so / then\"",
+            "\"the\""
+          ],
+          "answer": 1,
+          "explain": "فَ links things in sequence or shows a result."
+        },
+        {
+          "q": "Is the فِ in فِي (\"in\") the prefix فَ?",
+          "options": [
+            "Yes",
+            "No — it has a kasra, and فِي is a word of its own"
+          ],
+          "answer": 1,
+          "explain": "The prefix is always فَ with a fatḥa. فِي is a separate word, \"in\"."
+        }
+      ]
+    },
+    {
+      "slug": "bi-li-ka",
+      "number": "2.3",
+      "title": "بِ \"with\", لِ \"for\", كَ \"like\"",
+      "minutes": 8,
+      "goal": "Recognise the three joined prepositions and what they do to the word after them.",
+      "blocks": [
+        {
+          "type": "text",
+          "md": "Three short prepositions are always written joined to the next word:"
+        },
+        {
+          "type": "table",
+          "head": [
+            "Prefix",
+            "Meaning",
+            "Times in the Qur'an"
+          ],
+          "rows": [
+            [
+              "بِـ (bi)",
+              "with, by, in",
+              "{{stat:bi}}"
+            ],
+            [
+              "لِـ (li)",
+              "for, to, belonging to",
+              "{{stat:li}}"
+            ],
+            [
+              "كَـ (ka)",
+              "like, as",
+              "{{stat:ka}}"
+            ]
+          ]
+        },
+        {
+          "type": "examples",
+          "items": [
+            {
+              "word": "بِسْمِ",
+              "ref": "1:1",
+              "say": "bi-smi",
+              "means": "in (the) name (of)",
+              "note": "بِ + ٱسْم; the ٱ of ٱسْم drops out after بِ."
+            },
+            {
+              "word": "بِٱلْقَلَمِ",
+              "ref": "96:4",
+              "say": "bil-qalami",
+              "means": "by the pen",
+              "note": "بِ + ٱلْ + قَلَم."
+            },
+            {
+              "word": "لِلَّهِ",
+              "ref": "1:2",
+              "say": "lillāhi",
+              "means": "(be) to Allah",
+              "note": "لِ + ٱللَّه: the ٱ drops out, and rather than three ل's in a row only two are written, the second with a shadda."
+            },
+            {
+              "word": "لِّلْمُتَّقِينَ",
+              "ref": "2:2",
+              "say": "lil-muttaqīna",
+              "means": "for the God-conscious",
+              "note": "لِ + ٱلْ becomes لِلْ."
+            },
+            {
+              "word": "كَمَثَلِ",
+              "ref": "2:17",
+              "say": "ka-mathali",
+              "means": "like the example (of)",
+              "note": "كَ + مَثَل."
+            }
+          ]
+        },
+        {
+          "type": "tip",
+          "md": "A noun after بِ, لِ or كَ usually ends in **-i** (kasra or -in): bi-smi, lillāhi, bil-qalami, ka-mathali. This ending is the genitive case, and it's a quick way to spot that a preposition is at work."
+        },
+        {
+          "type": "text",
+          "md": "Don't confuse لِ with **لَ (la), \"surely, indeed\"**, which has a fatḥa and adds emphasis:"
+        },
+        {
+          "type": "examples",
+          "items": [
+            {
+              "word": "لَقَدْ",
+              "ref": "3:164",
+              "say": "la-qad",
+              "means": "certainly",
+              "note": "لَ (surely) + قَدْ (indeed): a strong \"truly\"."
+            }
+          ]
+        }
+      ],
+      "quiz": [
+        {
+          "q": "What does بِٱلْقَلَمِ mean?",
+          "options": [
+            "the pen",
+            "for the pen",
+            "by the pen"
+          ],
+          "answer": 2,
+          "explain": "بِ (by) + ٱلْ (the) + قَلَم (pen)."
+        },
+        {
+          "q": "لِ + ٱللَّه would give three ل's in a row. Why does لِلَّهِ have only two?",
+          "options": [
+            "It's a different word",
+            "The ٱ drops out, and the spelling writes the ل's as two, with a shadda",
+            "It's a spelling mistake"
+          ],
+          "answer": 1,
+          "explain": "After لِ the joining ٱ disappears. Three ل's in a row are never written, so لِلَّهِ has two: لِ, then لَّ with a shadda."
+        },
+        {
+          "q": "What ending does a noun take after بِ, لِ or كَ?",
+          "options": [
+            "-u",
+            "-a",
+            "-i"
+          ],
+          "answer": 2,
+          "explain": "These prepositions put the noun in the genitive, which usually ends in -i."
+        },
+        {
+          "q": "What does لَقَدْ mean?",
+          "options": [
+            "for",
+            "certainly",
+            "like"
+          ],
+          "answer": 1,
+          "explain": "لَ with a fatḥa is emphatic: la-qad, \"certainly\"."
+        }
+      ]
+    },
+    {
+      "slug": "noun-pronouns",
+      "number": "2.4",
+      "title": "\"my, your, his\": pronouns on nouns",
+      "minutes": 9,
+      "goal": "Read the pronoun endings that mean my, your, his, her, our and their.",
+      "blocks": [
+        {
+          "type": "text",
+          "md": "Possessive words are suffixes joined to the end of the noun. The word رَبّ (Lord) shows almost all of them in the Qur'an:"
+        },
+        {
+          "type": "examples",
+          "items": [
+            {
+              "word": "رَبِّى",
+              "ref": "3:51",
+              "say": "rabbī",
+              "means": "my Lord",
+              "note": "ـِى = my"
+            },
+            {
+              "word": "رَبُّكَ",
+              "ref": "2:30",
+              "say": "rabbuka",
+              "means": "your Lord (one man)",
+              "note": "ـكَ = your (m.)"
+            },
+            {
+              "word": "رَبُّكِ",
+              "ref": "19:21",
+              "say": "rabbuki",
+              "means": "your Lord (one woman)",
+              "note": "ـكِ = your (f.) — said to Maryam."
+            },
+            {
+              "word": "رَبُّهُۥ",
+              "ref": "2:124",
+              "say": "rabbuhū",
+              "means": "his Lord",
+              "note": "ـهُۥ = his"
+            },
+            {
+              "word": "رَبُّنَا",
+              "ref": "2:139",
+              "say": "rabbunā",
+              "means": "our Lord",
+              "note": "ـنَا = our"
+            },
+            {
+              "word": "رَبُّكُمْ",
+              "ref": "6:54",
+              "say": "rabbukum",
+              "means": "your Lord (you all)",
+              "note": "ـكُمْ = your (plural)"
+            },
+            {
+              "word": "رَبُّهُمْ",
+              "ref": "3:195",
+              "say": "rabbuhum",
+              "means": "their Lord",
+              "note": "ـهُمْ = their"
+            }
+          ]
+        },
+        {
+          "type": "table",
+          "head": [
+            "Ending",
+            "Meaning"
+          ],
+          "rows": [
+            [
+              "ـِى / ـِي",
+              "my"
+            ],
+            [
+              "ـكَ",
+              "your (one man)"
+            ],
+            [
+              "ـكِ",
+              "your (one woman)"
+            ],
+            [
+              "ـهُۥ / ـهِۦ",
+              "his, its"
+            ],
+            [
+              "ـهَا",
+              "her, its"
+            ],
+            [
+              "ـنَا",
+              "our"
+            ],
+            [
+              "ـكُمْ",
+              "your (plural)"
+            ],
+            [
+              "ـهُمْ / ـهِمْ",
+              "their (men, or mixed)"
+            ],
+            [
+              "ـهُنَّ / ـهِنَّ",
+              "their (women)"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "md": "**ـهُ becomes ـهِ after an i-sound** (kasra, ī or y). The meaning doesn't change:"
+        },
+        {
+          "type": "examples",
+          "items": [
+            {
+              "word": "رَبِّهِۦ",
+              "ref": "2:112",
+              "say": "rabbihī",
+              "means": "his Lord",
+              "note": "Same meaning as رَبُّهُۥ — the kasra on ب turns -hū into -hī."
+            },
+            {
+              "word": "رَبِّهِمْ",
+              "ref": "2:46",
+              "say": "rabbihim",
+              "means": "their Lord",
+              "note": "Same meaning as رَبُّهُمْ."
+            }
+          ]
+        },
+        {
+          "type": "tip",
+          "md": "A noun with a pronoun ending never also has ٱلْ or tanwīn: it's already definite (\"my Lord\", not \"a my Lord\")."
+        }
+      ],
+      "quiz": [
+        {
+          "q": "What does رَبُّنَا mean?",
+          "options": [
+            "my Lord",
+            "our Lord",
+            "their Lord"
+          ],
+          "answer": 1,
+          "explain": "ـنَا means \"our\"."
+        },
+        {
+          "q": "What is the difference between رَبُّكَ and رَبُّكِ?",
+          "options": [
+            "None",
+            "Speaking to a man vs speaking to a woman",
+            "Singular vs plural Lord"
+          ],
+          "answer": 1,
+          "explain": "ـكَ is \"your\" to one man, ـكِ is \"your\" to one woman."
+        },
+        {
+          "q": "رَبُّهُمْ and رَبِّهِمْ both mean \"their Lord\". Why the different vowel?",
+          "options": [
+            "They are different words",
+            "ـهُمْ becomes ـهِمْ after an i-sound",
+            "One is a mistake"
+          ],
+          "answer": 1,
+          "explain": "After a kasra, ī or y, the pronoun's ḍamma becomes a kasra: -hum → -him."
+        },
+        {
+          "q": "Can رَبُّنَا also take ٱلْ?",
+          "options": [
+            "Yes: ٱلرَّبُّنَا",
+            "No — a pronoun ending already makes it definite"
+          ],
+          "answer": 1,
+          "explain": "A noun never has both ٱلْ and a pronoun ending."
+        }
+      ]
+    },
+    {
+      "slug": "verb-pronouns",
+      "number": "2.5",
+      "title": "\"me, him, them\": pronouns on verbs and prepositions",
+      "minutes": 8,
+      "goal": "Read object pronouns on verbs and pronouns on little words like لَ, فِي and عَلَى.",
+      "blocks": [
+        {
+          "type": "text",
+          "md": "The same endings go on verbs, where they mean **who the action is done to** (the object). The only new one is **\"me\": ـنِى** on a verb (not ـِى)."
+        },
+        {
+          "type": "examples",
+          "items": [
+            {
+              "word": "خَلَقَنِى",
+              "ref": "26:78",
+              "say": "khalaqanī",
+              "means": "(He) created me",
+              "note": "ـنِى = me (on a verb)"
+            },
+            {
+              "word": "خَلَقَكُمْ",
+              "ref": "2:21",
+              "say": "khalaqakum",
+              "means": "(He) created you",
+              "note": "ـكُمْ = you (plural)"
+            },
+            {
+              "word": "خَلَقَهُۥ",
+              "ref": "3:59",
+              "say": "khalaqahū",
+              "means": "(He) created him",
+              "note": "ـهُۥ = him"
+            },
+            {
+              "word": "ٱهْدِنَا",
+              "ref": "1:6",
+              "say": "ihdinā",
+              "means": "guide us",
+              "note": "ـنَا = us"
+            },
+            {
+              "word": "يُحِبُّهُمْ",
+              "ref": "5:54",
+              "say": "yuḥibbuhum",
+              "means": "He loves them",
+              "note": "ـهُمْ = them"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "md": "Prepositions take the same endings:"
+        },
+        {
+          "type": "examples",
+          "items": [
+            {
+              "word": "لَهُۥ",
+              "ref": "2:102",
+              "say": "lahū",
+              "means": "for him",
+              "note": "لِ becomes لَ before a pronoun (except لِى, \"for me\"): la-hū."
+            },
+            {
+              "word": "فِيهِ",
+              "ref": "2:2",
+              "say": "fīhi",
+              "means": "in it",
+              "note": "فِي + ـهِ (after ī, so -hi)."
+            },
+            {
+              "word": "مِنْهُ",
+              "ref": "2:60",
+              "say": "minhu",
+              "means": "from it",
+              "note": "مِنْ + ـهُ."
+            },
+            {
+              "word": "عَلَيْهِمْ",
+              "ref": "1:7",
+              "say": "ʿalayhim",
+              "means": "on them",
+              "note": "عَلَى becomes عَلَيْـ before a pronoun."
+            },
+            {
+              "word": "إِلَيْكَ",
+              "ref": "2:4",
+              "say": "ilayka",
+              "means": "to you",
+              "note": "إِلَى becomes إِلَيْـ before a pronoun."
+            }
+          ]
+        },
+        {
+          "type": "tip",
+          "md": "عَلَى (on) and إِلَى (to) turn their final ى into يْ when a pronoun is added: عَلَيْهِمْ, إِلَيْكَ. Spot the يْ and you know there's a pronoun after it."
+        }
+      ],
+      "quiz": [
+        {
+          "q": "How do you say \"He created me\"?",
+          "options": [
+            "خَلَقِى",
+            "خَلَقَنِى",
+            "خَلَقَهُۥ"
+          ],
+          "answer": 1,
+          "explain": "On a verb, \"me\" is ـنِى: khalaqanī."
+        },
+        {
+          "q": "What does ٱهْدِنَا mean?",
+          "options": [
+            "guide me",
+            "guide us",
+            "He guided us"
+          ],
+          "answer": 1,
+          "explain": "ٱهْدِ (guide!) + ـنَا (us)."
+        },
+        {
+          "q": "What does عَلَيْهِمْ mean?",
+          "options": [
+            "on them",
+            "to you",
+            "from it"
+          ],
+          "answer": 0,
+          "explain": "عَلَى (on) + ـهِمْ (them); the ى becomes يْ."
+        },
+        {
+          "q": "Why is لِ written لَ in لَهُۥ?",
+          "options": [
+            "It means \"surely\" here",
+            "لِ takes a fatḥa before a pronoun",
+            "It's a different word"
+          ],
+          "answer": 1,
+          "explain": "The preposition لِ becomes لَ before most pronouns: lahū, lahum, lakum."
+        }
+      ]
+    },
+    {
+      "slug": "hidden-pronouns",
+      "number": "2.6",
+      "title": "When \"my\" is hidden",
+      "minutes": 7,
+      "goal": "Spot the pronoun \"my\" when the Qur'an doesn't write its ي.",
+      "blocks": [
+        {
+          "type": "text",
+          "md": "Sometimes the ي of \"my\" isn't written as a letter of its own. There are three ways this happens."
+        },
+        {
+          "type": "text",
+          "md": "**1. The ي is dropped and only a kasra is left.** This is common when calling out to someone:"
+        },
+        {
+          "type": "examples",
+          "items": [
+            {
+              "word": "يَٰقَوْمِ",
+              "ref": "2:54",
+              "say": "yā qawmi",
+              "means": "O my people",
+              "note": "Not qawmī: the ي is dropped, and the kasra under م is all that's left of \"my\"."
+            },
+            {
+              "word": "رَبِّ",
+              "ref": "2:126",
+              "say": "rabbi",
+              "means": "my Lord",
+              "note": "Ibrāhīm calling on God: \"My Lord, make this a secure city\"."
+            }
+          ]
+        },
+        {
+          "type": "tip",
+          "md": "رَبِّ can also mean **\"Lord of\"**, with no \"my\" at all: رَبِّ ٱلْعَٰلَمِينَ in 1:2 is \"Lord of the worlds\". The spelling is the same; the words around it tell you which it is."
+        },
+        {
+          "type": "text",
+          "md": "**2. The ي merges into a shadda** when the word already ends in ي:"
+        },
+        {
+          "type": "examples",
+          "items": [
+            {
+              "word": "إِلَىَّ",
+              "ref": "3:55",
+              "say": "ilayya",
+              "means": "to Me",
+              "note": "إِلَى → إِلَيْ + ي = إِلَيَّ: the two ي's are written as one with a shadda."
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "md": "**3. A fatḥa is left instead**, in the set phrase \"O son of my mother\":"
+        },
+        {
+          "type": "examples",
+          "items": [
+            {
+              "word": "يَبْنَؤُمَّ",
+              "ref": "20:94",
+              "say": "yabna-umma",
+              "means": "O son of my mother",
+              "note": "Hārūn speaking to Mūsā. The ي of \"my\" became an alif and was dropped, leaving the fatḥa on م."
+            }
+          ]
+        },
+        {
+          "type": "tip",
+          "md": "On a word page Bayan shows a hidden \"my\" as a faded (ي) in the SUFFIX box, and the suffix card explains which of these three cases it is."
+        }
+      ],
+      "quiz": [
+        {
+          "q": "What does يَٰقَوْمِ mean?",
+          "options": [
+            "O people",
+            "O my people",
+            "their people"
+          ],
+          "answer": 1,
+          "explain": "The kasra on م is what's left of the dropped \"my\"."
+        },
+        {
+          "q": "Does رَبِّ always mean \"my Lord\"?",
+          "options": [
+            "Yes",
+            "No — it can also mean \"Lord of\", as in رَبِّ ٱلْعَٰلَمِينَ"
+          ],
+          "answer": 1,
+          "explain": "The spelling is the same; context decides between \"my Lord\" and \"Lord of\"."
+        },
+        {
+          "q": "Where is the \"my\" in إِلَىَّ?",
+          "options": [
+            "It isn't there",
+            "Merged into the shadda on ي",
+            "In the hamza"
+          ],
+          "answer": 1,
+          "explain": "The word's own ي and the ي of \"my\" are written as one ي with a shadda."
+        }
+      ]
+    }
+  ]
+}

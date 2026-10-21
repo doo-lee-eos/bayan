@@ -1,0 +1,187 @@
+{
+  "title": "Learn Qur'anic Arabic",
+  "intro": "For learners who can already read Arabic script. Arabic builds its words from three-letter roots poured into a small set of patterns; learn the patterns and you can work out words you've never seen. Every word here is a real word from the Qur'an — tap one to open its Bayan page.",
+  "levels": [
+    {
+      "number": 0,
+      "title": "Reading the script",
+      "summary": "The letters, the vowel marks, and the special signs you only see in the Qur'an.",
+      "file": "level0.json",
+      "hidden": true,
+      "note": "Hidden for now: the course assumes learners can already read Arabic. Remove \"hidden\" to bring these lessons back."
+    },
+    {
+      "number": 1,
+      "title": "Roots and the فَعَلَ scale",
+      "summary": "Most words are three root letters poured into a pattern. Learn to find the root, read a pattern on the فَعَلَ scale, and work out what the commonest patterns mean.",
+      "file": "level1.json"
+    },
+    {
+      "number": 2,
+      "title": "Pieces around the word",
+      "summary": "One Arabic word can hold three or four English words. Take a word apart: the joined particles وَ فَ بِ لِ كَ, the article, and the pronoun endings.",
+      "file": "level2.json"
+    },
+    {
+      "number": 3,
+      "title": "Core vocabulary",
+      "summary": "The 300 most frequent words, in sets of ten. Together they make up three quarters of every word in the Qur'an.",
+      "coming_soon": true
+    },
+    {
+      "number": 4,
+      "title": "Verbs",
+      "summary": "Past and present, who is doing the action, commands, and what Forms II–X add to a root's meaning.",
+      "coming_soon": true
+    },
+    {
+      "number": 5,
+      "title": "Sentences",
+      "summary": "Sentences with and without a verb, إِنَّ and كَانَ, negation, questions, conditions and calling out with يَا.",
+      "coming_soon": true
+    },
+    {
+      "number": 6,
+      "title": "Reading real passages",
+      "summary": "Short sūrahs word by word — al-Fātiḥah, al-Ikhlāṣ, al-Falaq, an-Nās — then longer passages.",
+      "coming_soon": true
+    }
+  ],
+  "patterns": {
+    "فَعَلَ": {
+      "say": "faʿala",
+      "role": "the plain verb",
+      "group": "verb"
+    },
+    "فَعِلَ": {
+      "say": "faʿila",
+      "role": "the plain verb",
+      "group": "verb"
+    },
+    "فَاعِل": {
+      "say": "fāʿil",
+      "role": "the doer, one who does it",
+      "group": "doer"
+    },
+    "مَفْعُول": {
+      "say": "mafʿūl",
+      "role": "the done-to, what the action happens to",
+      "group": "doneto"
+    },
+    "فَعْل": {
+      "say": "faʿl",
+      "role": "a basic noun",
+      "group": "noun"
+    },
+    "فِعْل": {
+      "say": "fiʿl",
+      "role": "a basic noun",
+      "group": "noun"
+    },
+    "فُعْل": {
+      "say": "fuʿl",
+      "role": "a basic noun",
+      "group": "noun"
+    },
+    "فَعَل": {
+      "say": "faʿal",
+      "role": "a basic noun",
+      "group": "noun"
+    },
+    "فِعَال": {
+      "say": "fiʿāl",
+      "role": "a noun, or a plural",
+      "group": "noun"
+    },
+    "فَعِيل": {
+      "say": "faʿīl",
+      "role": "a quality that lasts",
+      "group": "quality"
+    },
+    "فَعُول": {
+      "say": "faʿūl",
+      "role": "someone who does it a great deal",
+      "group": "quality"
+    },
+    "فَعَّال": {
+      "say": "faʿʿāl",
+      "role": "someone who does it again and again",
+      "group": "quality"
+    },
+    "فَعْلَان": {
+      "say": "faʿlān",
+      "role": "full of a quality",
+      "group": "quality"
+    },
+    "فُعْلَان": {
+      "say": "fuʿlān",
+      "role": "a noun",
+      "group": "noun"
+    },
+    "أَفْعَل": {
+      "say": "afʿal",
+      "role": "more, most",
+      "group": "more"
+    },
+    "مَفْعَل": {
+      "say": "mafʿal",
+      "role": "the place or time of the action",
+      "group": "place"
+    },
+    "مَفْعِل": {
+      "say": "mafʿil",
+      "role": "the place or time of the action",
+      "group": "place"
+    },
+    "مَفْعِلَة": {
+      "say": "mafʿila",
+      "role": "a noun of the action",
+      "group": "noun"
+    },
+    "فَعَّلَ": {
+      "say": "faʿʿala",
+      "role": "a Form II verb",
+      "group": "verb"
+    },
+    "أَفْعَال": {
+      "say": "afʿāl",
+      "role": "a plural",
+      "group": "plural"
+    },
+    "فُعُول": {
+      "say": "fuʿūl",
+      "role": "a plural, or the action itself",
+      "group": "plural"
+    },
+    "فَعْلَة": {
+      "say": "faʿla",
+      "role": "a noun with ة",
+      "group": "noun"
+    },
+    "مَفَاعِل": {
+      "say": "mafāʿil",
+      "role": "a plural",
+      "group": "plural"
+    },
+    "فُعَلَاء": {
+      "say": "fuʿalāʾ",
+      "role": "a plural",
+      "group": "plural"
+    },
+    "فُعُل": {
+      "say": "fuʿul",
+      "role": "a plural",
+      "group": "plural"
+    },
+    "مِفْعَال": {
+      "say": "mifʿāl",
+      "role": "a tool",
+      "group": "place"
+    },
+    "فَعُل": {
+      "say": "faʿul",
+      "role": "a basic noun",
+      "group": "noun"
+    }
+  }
+}

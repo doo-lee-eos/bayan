@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Create account' if mode == 'signup' else 'Sign in' }} · Bayan{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/learn.css') }}">
+
+<main class="learn auth-page">
+    {% include "_learn_account.html" %}
+
+    <section class="auth-card">
+        <h1>{{ 'Create an account' if mode == 'signup' else 'Sign in' }}</h1>
+        <p class="auth-lede">
+            {% if mode == 'signup' %}Save your lesson progress, quiz results and notes, and pick up on any device. Every lesson stays free to read without an account.
+            {% else %}Welcome back. Progress you made in this browser before signing in is added to your account.{% endif %}
+        </p>
+
+        {% if error %}<div class="auth-error" role="alert">{{ error }}</div>{% endif %}
+
+        <form method="post" class="auth-form">
+            <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+            <input type="hidden" name="next" value="{{ next }}">
+            {% if mode == 'signup' %}
+            <label>Name <span class="opt">(optional)</span>
+                <input type="text" name="name" autocomplete="name" maxlength="80">
+            </label>
+            {% endif %}
+            <label>Email
+                <input type="email" name="email" required autocomplete="email" value="{{ email }}">
+            </label>
+            <label>Password{% if mode == 'signup' %} <span class="opt">(at least 8 characters)</span>{% endif %}
+                <input type="password" name="password" required minlength="{{ 8 if mode == 'signup' else 1 }}"
+                       autocomplete="{{ 'new-password' if mode == 'signup' else 'current-password' }}">
+            </label>
+            <button type="submit" class="btn primary">{{ 'Create account' if mode == 'signup' else 'Sign in' }}</button>
+        </form>
+
+        <p class="auth-switch">
+            {% if mode == 'signup' %}Already have an account? <a href="{{ url_for('login', next=next) }}">Sign in</a>
+            {% else %}New here? <a href="{{ url_for('signup', next=next) }}">Create an account</a>{% endif %}
+        </p>
+    </section>
+</main>
+{% endblock %}

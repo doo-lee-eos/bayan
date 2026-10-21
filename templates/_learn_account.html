@@ -1,0 +1,27 @@
+{# Top bar of every course page: where you are, and your account. #}
+{% set user = current_user() %}
+<nav class="learn-bar">
+    <div class="crumbs">
+        <a href="{{ url_for('home') }}">Bayan</a>
+        <span aria-hidden="true">›</span>
+        <a href="{{ url_for('learn') }}">Course</a>
+        {% if lesson %}
+        <span aria-hidden="true">›</span>
+        <span class="here">Lesson {{ lesson.number }}</span>
+        {% endif %}
+    </div>
+    <div class="account">
+        {% if user %}
+        <span class="who">Signed in as <strong>{{ user.name or user.email }}</strong></span>
+        <form method="post" action="{{ url_for('logout') }}">
+            <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <button type="submit" class="link-btn">Sign out</button>
+        </form>
+        {% else %}
+        <span class="who">Progress is saved in this browser.</span>
+        <a href="{{ url_for('login', next=request.path) }}">Sign in</a>
+        <a class="btn small" href="{{ url_for('signup', next=request.path) }}">Create account</a>
+        {% endif %}
+    </div>
+</nav>

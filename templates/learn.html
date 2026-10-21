@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Learn Qur'anic Arabic · Bayan{% endblock %}
+
+{% block content %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/learn.css') }}">
+
+{% set user = current_user() %}
+{% set total_lessons = course.order|length %}
+
+<main class="learn">
+    {% include "_learn_account.html" %}
+
+    <header class="learn-hero">
+        <div class="eyebrow">BAYAN COURSE</div>
+        <h1>{{ course.title }}</h1>
+        <p class="lede">{{ course.intro_html }}</p>
+
+        <div class="learn-progress" data-total="{{ total_lessons }}">
+            <div class="bar" aria-hidden="true"><span style="width:0%"></span></div>
+            <div class="label"><strong class="done-count">0</strong> of {{ total_lessons }} lessons done</div>
+            <a class="btn primary continue" href="{{ url_for('lesson', slug=course.order[0]) }}">Start the course</a>
+        </div>
+    </header>
+
+    <div class="review-box" hidden>
+        <div class="review-title">To review</div>
+        <p>Lessons where you didn't get every quiz question right:</p>
+        <ul class="review-list"></ul>
+    </div>
+
+    <ol class="levels">
+        {% for level in course.levels %}
+        <li class="level{% if level.coming_soon %} soon{% endif %}">
+            <div class="level-head">
+                <div class="level-num">Level {{ level.number }}</div>
+                <h2>{{ level.title }}</h2>
+                {% if level.coming_soon %}<span class="soon-tag">Coming soon</span>{% endif %}
+            </div>
+            <p class="level-summary">{{ level.summary_html }}</p>
+            {% if level.lessons %}
+            <ol class="lessons">
+                {% for l in level.lessons %}
+                <li>
+                    <a class="lesson-row" href="{{ url_for('lesson', slug=l.slug) }}" data-lesson="{{ l.slug }}">
+                        <span class="status" aria-hidden="true"></span>
+                        <span class="num">{{ l.number }}</span>
+                        <span class="lesson-title">{{ l.title_html }}</span>
+                        <span class="meta">
+                            <span class="score"></span>
+                            {% if l.minutes %}<span class="mins">{{ l.minutes }} min</span>{% endif %}
+                        </span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ol>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ol>
+</main>
+
+<script id="learn-state" type="application/json">{{ {
+    "signedIn": user is not none,
+    "csrf": csrf_token(),
+    "server": state,
+    "order": course.order,
+    "titles": course.titles
+}|tojson }}</script>
+<script src="{{ url_for('static', filename='js/learn.js') }}" defer></script>
+{% endblock %}

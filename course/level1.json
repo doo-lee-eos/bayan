@@ -1,0 +1,1504 @@
+{
+  "lessons": [
+    {
+      "slug": "roots",
+      "number": "1.1",
+      "title": "Three letters, one idea",
+      "minutes": 10,
+      "goal": "See the root running through a family of words, and learn which letters a word can add around it.",
+      "blocks": [
+        {
+          "type": "text",
+          "md": "Here are four words from the Qur'an. Before reading the meanings, look at the letters:"
+        },
+        {
+          "type": "family",
+          "root": "كتب",
+          "patterns": [
+            "فَعَلَ",
+            "فِعَال",
+            "فَاعِل",
+            "مَفْعُول"
+          ]
+        },
+        {
+          "type": "text",
+          "md": "To write, a book, a scribe, something written. Four different words, but ك, ت and ب run through every one of them, always in that order. Those three letters are the word's **root**, and they carry the idea the whole family shares: writing. What changes from word to word is everything around them — a long ā in one, a م in front in another, and different vowels in each."
+        },
+        {
+          "type": "text",
+          "md": "Nearly all of Arabic works like this. The Qur'an's vocabulary goes back to {{stat:roots}} roots, and almost every noun, adjective and verb in it belongs to one of them. That's why every Bayan word page ends with the root, and the root page lists the whole family."
+        },
+        {
+          "type": "heading",
+          "md": "Bigger families"
+        },
+        {
+          "type": "text",
+          "md": "Some roots have a lot of children. Here is the family of ع ل م, which is about knowing. The number on each word is how many times the Qur'an uses it."
+        },
+        {
+          "type": "family",
+          "root": "علم",
+          "patterns": [
+            "فَعِلَ",
+            "فِعْل",
+            "فَعِيل",
+            "فَاعِل",
+            "أَفْعَل",
+            "مَفْعُول",
+            "فَعَّلَ"
+          ]
+        },
+        {
+          "type": "text",
+          "md": "Every one of these is about knowledge, but each in its own way: knowing, knowledge, all-knowing, a knower, more knowing, known, and to teach — to make someone know. That difference in *way* comes from the shape the root has been put into, which is what the rest of this level is about."
+        },
+        {
+          "type": "family",
+          "root": "غفر",
+          "patterns": [
+            "فَعَلَ",
+            "فَعُول",
+            "مَفْعِلَة",
+            "فَاعِل",
+            "فَعَّال"
+          ]
+        },
+        {
+          "type": "text",
+          "md": "If someone tells you that غَفَرَ means \"to forgive\", you already know what kind of word غَفُور and مَغْفِرَة will be before you've looked them up. This is the real reason to learn roots: one meaning unlocks a dozen words."
+        },
+        {
+          "type": "heading",
+          "md": "Which letters are not the root?"
+        },
+        {
+          "type": "text",
+          "md": "The root letters are always there and always in order. The extra letters come from a short list, and the grammarians packed them into one word so students could remember it: سَأَلْتُمُونِيهَا, \"you asked me about it\". Its ten letters — س ء ل ت م و ن ي ه ا — are the only ones a pattern can add."
+        },
+        {
+          "type": "tip",
+          "md": "Those ten letters can also be root letters. ع ل م has ل and م in its root, and س ج د has س. The list tells you which letters *might* have been added, not which ones were. The next lesson gives you the tool that settles it."
+        },
+        {
+          "type": "text",
+          "md": "In practice, finding the root takes two steps. First take off what's joined to the front and back: ٱلْ, وَ, فَ, the pronoun endings, the plural ـُونَ / ـِينَ. Then look for the letters doing pattern work: a م at the front, an ا after the first letter, a و or ي just before the last. What's left is usually the root. Here it is on three words from al-Fātiḥah and al-Baqarah:"
+        },
+        {
+          "type": "examples",
+          "items": [
+            {
+              "word": "ٱلْعَٰلَمِينَ",
+              "ref": "1:2",
+              "say": "al-ʿālamīna",
+              "means": "the worlds",
+              "note": "Take off ٱلْ and the plural ـِينَ: عَٰلَم. The small alif after ع is added by the pattern. Root: ع ل م."
+            },
+            {
+              "word": "ٱلْمَغْضُوبِ",
+              "ref": "1:7",
+              "say": "al-maghḍūbi",
+              "means": "those who earned (God's) anger",
+              "note": "Take off ٱلْ: مَغْضُوب. The م in front and the و before the last letter are both added. Root: غ ض ب, anger."
+            },
+            {
+              "word": "ٱلظَّٰلِمِينَ",
+              "ref": "2:35",
+              "say": "aẓ-ẓālimīna",
+              "means": "the wrongdoers",
+              "note": "Take off ٱلْ and ـِينَ: ظَٰلِم. The small alif is added. Root: ظ ل م, wronging."
+            }
+          ]
+        }
+      ],
+      "quiz": [
+        {
+          "q": "Which of these letters can never be added by a pattern, so if you see it, it must be a root letter?",
+          "options": [
+            "م",
+            "ت",
+            "ب",
+            "ن"
+          ],
+          "answer": 2,
+          "explain": "ب isn't in سَأَلْتُمُونِيهَا, so it is never an added letter. م, ت and ن all are."
+        },
+        {
+          "q": "مَسْجِد (a place of prostration) and سَاجِد (one who prostrates) share a root. Which?",
+          "options": [
+            "م س ج",
+            "س ج د",
+            "س ا ج"
+          ],
+          "answer": 1,
+          "explain": "The م at the front of مَسْجِد and the ا of سَاجِد are pattern letters. س ج د is in both."
+        }
+      ],
+      "drill": {
+        "count": 8,
+        "kinds": [
+          "root"
+        ],
+        "words": [
+          [
+            "كتب",
+            "مَفْعُول"
+          ],
+          [
+            "علم",
+            "مَفْعُول"
+          ],
+          [
+            "غضب",
+            "مَفْعُول"
+          ],
+          [
+            "شهد",
+            "مَفْعُول"
+          ],
+          [
+            "علم",
+            "أَفْعَل"
+          ],
+          [
+            "ظلم",
+            "أَفْعَل"
+          ],
+          [
+            "كبر",
+            "أَفْعَل"
+          ],
+          [
+            "حسن",
+            "أَفْعَل"
+          ],
+          [
+            "سجد",
+            "مَفْعِل"
+          ],
+          [
+            "شرق",
+            "مَفْعِل"
+          ],
+          [
+            "غرب",
+            "مَفْعِل"
+          ],
+          [
+            "سكن",
+            "مَفْعَل"
+          ],
+          [
+            "صحب",
+            "أَفْعَال"
+          ],
+          [
+            "كفر",
+            "فَاعِل"
+          ],
+          [
+            "صدق",
+            "فَاعِل"
+          ],
+          [
+            "صبر",
+            "فَعَّال"
+          ],
+          [
+            "غفر",
+            "فَعُول"
+          ],
+          [
+            "رحم",
+            "فَعِيل"
+          ],
+          [
+            "رحم",
+            "فَعْلَان"
+          ],
+          [
+            "سلط",
+            "فُعْلَان"
+          ],
+          [
+            "جلد",
+            "فُعُول"
+          ],
+          [
+            "حسب",
+            "فِعَال"
+          ],
+          [
+            "غفر",
+            "مَفْعِلَة"
+          ],
+          [
+            "حكم",
+            "فَعِيل"
+          ]
+        ]
+      }
+    },
+    {
+      "slug": "the-scale",
+      "number": "1.2",
+      "title": "Measuring words with فَعَلَ",
+      "minutes": 12,
+      "goal": "Read any word on the فَعَلَ scale: which letters are the root, which belong to the pattern, and how to put a new root into a pattern.",
+      "blocks": [
+        {
+          "type": "text",
+          "md": "The last lesson ended on a problem. To find a root you need to know which letters are the pattern's — but how do you write a pattern down on its own, without any particular root in it?"
+        },
+        {
+          "type": "text",
+          "md": "The grammarians solved it by borrowing a root and using it as a ruler. They picked ف ع ل, the root of فَعَلَ \"to do\", since every verb is some kind of doing. In a pattern, ف stands for the first root letter, ع for the second and ل for the third. Everything else is copied exactly: the added letters, the vowels, the shadda. This ruler is called the **mīzān**, the scale. When you say a word is *on* فَاعِل (عَلَىٰ وَزْنِ فَاعِل), you mean its root letters fill those three slots in exactly that shape."
+        },
+        {
+          "type": "text",
+          "md": "Read each pair top to bottom. The highlighted letters are the root, sitting where ف, ع and ل sit in the pattern above them:"
+        },
+        {
+          "type": "scale",
+          "items": [
+            [
+              "كتب",
+              "فَاعِل"
+            ],
+            [
+              "كتب",
+              "مَفْعُول"
+            ],
+            [
+              "سجد",
+              "مَفْعِل"
+            ],
+            [
+              "كبر",
+              "أَفْعَل"
+            ],
+            [
+              "غفر",
+              "فَعُول"
+            ],
+            [
+              "علم",
+              "فَعَّلَ"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "md": "Take كَاتِب. ك sits under ف, then the ا belongs to the pattern, then ت sits under ع and takes the pattern's kasra, and ب sits under ل. The vowels come from the pattern as well, which is why it's *kā-tib* and not *ki-tab*. In عَلَّمَ the shadda is the pattern's too: فَعَّلَ doubles whatever letter lands in the ع slot."
+        },
+        {
+          "type": "heading",
+          "md": "The vowels are part of the pattern"
+        },
+        {
+          "type": "text",
+          "md": "Two patterns can have exactly the same letters and differ only in their vowels:"
+        },
+        {
+          "type": "scale",
+          "items": [
+            [
+              "خلق",
+              "فَعْل"
+            ],
+            [
+              "علم",
+              "فِعْل"
+            ],
+            [
+              "ظلم",
+              "فُعْل"
+            ],
+            [
+              "غضب",
+              "فَعَل"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "md": "فَعْل, فِعْل, فُعْل and فَعَل are four different patterns, all of them basic nouns, and the Qur'an has hundreds of each. There's no rule telling you which vowel a given root takes; it's part of the word, the way the vowel in English *sing* or *sang* is. The same goes for verbs: خَلَقَ is on فَعَلَ and عَلِمَ is on فَعِلَ, and both are simply the plain verb, \"he did it\"."
+        },
+        {
+          "type": "heading",
+          "md": "Why it's worth the effort"
+        },
+        {
+          "type": "text",
+          "md": "The Qur'an uses {{stat:roots}} roots, but Bayan's pattern data finds only about {{stat:patterns_total}} patterns, and most of those are rare. The ten most common patterns account for {{stat:top10_pct}} of the Qur'an's root-based words, and the top twenty for {{stat:top20_pct}}. Each pattern you learn works in every root that uses it, so a few dozen shapes take you a very long way."
+        },
+        {
+          "type": "heading",
+          "md": "Try it"
+        },
+        {
+          "type": "builder",
+          "roots": [
+            "كتب",
+            "علم",
+            "ظلم",
+            "غفر",
+            "سجد",
+            "صبر"
+          ],
+          "patterns": [
+            "فَعَلَ",
+            "فَعِلَ",
+            "فَاعِل",
+            "مَفْعُول",
+            "فِعْل",
+            "فَعِيل",
+            "فَعُول",
+            "أَفْعَل",
+            "مَفْعِل"
+          ],
+          "note": "Pick a root and a pattern. Some combinations are real Qur'anic words; others are correct shapes that the Qur'an just doesn't use. A pattern tells you how a word *would* look, not whether it exists."
+        }
+      ],
+      "quiz": [
+        {
+          "q": "In the pattern مَفْعُول, which letters stand for the root?",
+          "options": [
+            "م and و",
+            "ف ع ل",
+            "م ف ع",
+            "None of them"
+          ],
+          "answer": 1,
+          "explain": "ف, ع and ل are always the slots for the root. م and و are what the pattern adds."
+        },
+        {
+          "q": "عِلْم (knowledge) and ظُلْم (injustice) are on different patterns. Why?",
+          "options": [
+            "One has an extra letter",
+            "Their first vowels are different: فِعْل and فُعْل",
+            "One is a verb"
+          ],
+          "answer": 1,
+          "explain": "Same number of letters, same sukūn; only the first vowel differs, and the vowels are part of the pattern."
+        }
+      ],
+      "drill": {
+        "count": 8,
+        "kinds": [
+          "pattern",
+          "build"
+        ],
+        "words": [
+          [
+            "كتب",
+            "فَاعِل"
+          ],
+          [
+            "ظلم",
+            "فَاعِل"
+          ],
+          [
+            "صدق",
+            "فَاعِل"
+          ],
+          [
+            "علم",
+            "مَفْعُول"
+          ],
+          [
+            "غضب",
+            "مَفْعُول"
+          ],
+          [
+            "سجد",
+            "مَفْعِل"
+          ],
+          [
+            "شرق",
+            "مَفْعِل"
+          ],
+          [
+            "كبر",
+            "أَفْعَل"
+          ],
+          [
+            "حسن",
+            "أَفْعَل"
+          ],
+          [
+            "غفر",
+            "فَعُول"
+          ],
+          [
+            "شكر",
+            "فَعُول"
+          ],
+          [
+            "حكم",
+            "فَعِيل"
+          ],
+          [
+            "سمع",
+            "فَعِيل"
+          ],
+          [
+            "علم",
+            "فِعْل"
+          ],
+          [
+            "رزق",
+            "فِعْل"
+          ],
+          [
+            "ظلم",
+            "فُعْل"
+          ],
+          [
+            "كفر",
+            "فُعْل"
+          ],
+          [
+            "خلق",
+            "فَعْل"
+          ],
+          [
+            "قتل",
+            "فَعَلَ"
+          ],
+          [
+            "سمع",
+            "فَعِلَ"
+          ]
+        ],
+        "patterns": [
+          "فَعَلَ",
+          "فَعِلَ",
+          "فَاعِل",
+          "مَفْعُول",
+          "فَعْل",
+          "فِعْل",
+          "فُعْل",
+          "فَعِيل",
+          "فَعُول",
+          "أَفْعَل",
+          "مَفْعِل"
+        ]
+      }
+    },
+    {
+      "slug": "doer-done-to",
+      "number": "1.3",
+      "title": "The doer and the done-to: فَاعِل and مَفْعُول",
+      "minutes": 12,
+      "goal": "Turn any verb into the person who does it and the thing it's done to, and recognise both in the Qur'an's plurals.",
+      "blocks": [
+        {
+          "type": "text",
+          "md": "Once you can read a pattern, the patterns start telling you things. The most useful pair is فَاعِل, the one who does something, and مَفْعُول, the one it's done to. Here is فَاعِل across twelve roots. Each row shows the verb, then its doer:"
+        },
+        {
+          "type": "pattern",
+          "wazn": "فَاعِل",
+          "roots": [
+            "كفر",
+            "ظلم",
+            "صدق",
+            "كذب",
+            "صبر",
+            "سجد",
+            "شهد",
+            "علم",
+            "كتب",
+            "رزق",
+            "خسر",
+            "غفر"
+          ]
+        },
+        {
+          "type": "text",
+          "md": "Notice how often English uses an adjective where Arabic has a فَاعِل: صَادِق is \"truthful\", صَابِر \"patient\". \"One who tells the truth\" and \"a truthful person\" come to the same thing, so translations go back and forth between the two."
+        },
+        {
+          "type": "text",
+          "md": "In the Qur'an these words mostly appear in the plural, with ـُونَ or ـِينَ on the end. The long ā is usually written as a small alif, so the pattern looks a little different on the page:"
+        },
+        {
+          "type": "examples",
+          "items": [
+            {
+              "word": "ٱلْكَٰفِرُونَ",
+              "ref": "109:1",
+              "say": "al-kāfirūna",
+              "means": "the disbelievers",
+              "note": "كَٰفِر + ـُونَ. The opening of Sūrat al-Kāfirūn: \"Say: O disbelievers\"."
+            },
+            {
+              "word": "ٱلصَّٰبِرِينَ",
+              "ref": "2:153",
+              "say": "aṣ-ṣābirīna",
+              "means": "the patient",
+              "note": "صَٰبِر + ـِينَ: \"Allah is with the patient.\""
+            },
+            {
+              "word": "ٱلسَّٰجِدِينَ",
+              "ref": "7:11",
+              "say": "as-sājidīna",
+              "means": "those who prostrated",
+              "note": "سَٰجِد + ـِينَ: Iblīs \"was not of those who prostrated\"."
+            }
+          ]
+        },
+        {
+          "type": "tip",
+          "md": "Watch the vowel on the ع slot. عَٰلِم with a kasra is \"a knower\" (فَاعِل), but عَٰلَم with a fatḥa is \"a world\" — a different pattern altogether. ٱلْعَٰلَمِينَ in al-Fātiḥah is \"the worlds\", not \"the knowers\"."
+        },
+        {
+          "type": "examples",
+          "items": [
+            {
+              "word": "عَٰلِمُ",
+              "ref": "6:73",
+              "say": "ʿālimu",
+              "means": "Knower (of)",
+              "note": "Kasra under ل: \"Knower of the unseen and the witnessed\"."
+            },
+            {
+              "word": "ٱلْعَٰلَمِينَ",
+              "ref": "1:2",
+              "say": "al-ʿālamīna",
+              "means": "the worlds",
+              "note": "Fatḥa on ل: \"Lord of the worlds\"."
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "md": "مَفْعُول: what the action lands on"
+        },
+        {
+          "type": "text",
+          "md": "مَفْعُول is the other side of the same action: the thing that gets written, known, witnessed. You say one in every rakʿah — ٱلْمَغْضُوبِ عَلَيْهِمْ, \"those on whom anger has fallen\", is مَغْضُوب from غَضِبَ \"to be angry\"."
+        },
+        {
+          "type": "pattern",
+          "wazn": "مَفْعُول",
+          "roots": [
+            "علم",
+            "كتب",
+            "غضب",
+            "بعث",
+            "حرم",
+            "شهد",
+            "نصر",
+            "سحر",
+            "شكر",
+            "فرض"
+          ]
+        },
+        {
+          "type": "text",
+          "md": "Put a pair side by side and the root does the rest: شَاهِد is a witness and مَشْهُود what is witnessed; سَاحِر is a magician and مَسْحُور someone bewitched. Not every root has both in the Qur'an, but whenever you meet one, you can work out the other."
+        }
+      ],
+      "drill": {
+        "count": 8,
+        "kinds": [
+          "meaning",
+          "build",
+          "root"
+        ],
+        "words": [
+          [
+            "كفر",
+            "فَاعِل"
+          ],
+          [
+            "ظلم",
+            "فَاعِل"
+          ],
+          [
+            "صدق",
+            "فَاعِل"
+          ],
+          [
+            "كذب",
+            "فَاعِل"
+          ],
+          [
+            "صبر",
+            "فَاعِل"
+          ],
+          [
+            "سجد",
+            "فَاعِل"
+          ],
+          [
+            "شهد",
+            "فَاعِل"
+          ],
+          [
+            "علم",
+            "فَاعِل"
+          ],
+          [
+            "رزق",
+            "فَاعِل"
+          ],
+          [
+            "سحر",
+            "فَاعِل"
+          ],
+          [
+            "عبد",
+            "فَاعِل"
+          ],
+          [
+            "علم",
+            "مَفْعُول"
+          ],
+          [
+            "غضب",
+            "مَفْعُول"
+          ],
+          [
+            "بعث",
+            "مَفْعُول"
+          ],
+          [
+            "شهد",
+            "مَفْعُول"
+          ],
+          [
+            "نصر",
+            "مَفْعُول"
+          ],
+          [
+            "سحر",
+            "مَفْعُول"
+          ],
+          [
+            "ظلم",
+            "مَفْعُول"
+          ],
+          [
+            "كتب",
+            "مَفْعُول"
+          ]
+        ],
+        "patterns": [
+          "فَاعِل",
+          "مَفْعُول",
+          "فَعْل",
+          "فِعْل",
+          "فُعْل",
+          "فَعِيل",
+          "فَعُول",
+          "فَعَّال",
+          "أَفْعَل",
+          "مَفْعِل",
+          "فِعَال"
+        ]
+      }
+    },
+    {
+      "slug": "qualities",
+      "number": "1.4",
+      "title": "Qualities: فَعِيل, فَعُول, فَعَّال, أَفْعَل",
+      "minutes": 14,
+      "goal": "Read the patterns that describe someone: a lasting quality, doing something a great deal, and \"more, most\". Many of the Names of Allah are built on them.",
+      "blocks": [
+        {
+          "type": "text",
+          "md": "A good share of the Names of Allah are built on four or five patterns. Once you know them, a Name tells you not only *what* is being described but *how*: as a lasting quality, as something done over and over, or as more than anything else."
+        },
+        {
+          "type": "heading",
+          "md": "فَعِيل: a quality that stays"
+        },
+        {
+          "type": "pattern",
+          "wazn": "فَعِيل",
+          "roots": [
+            "رحم",
+            "علم",
+            "حكم",
+            "سمع",
+            "بصر",
+            "قدر",
+            "عظم",
+            "كبر",
+            "شهد",
+            "نذر"
+          ]
+        },
+        {
+          "type": "text",
+          "md": "فَعِيل describes something that belongs to someone, not something they did once: رَحِيم is merciful by nature, عَلِيم knows always and everything. The same pattern also makes plain nouns, like نَذِير \"a warner\" and شَهِيد \"a witness\", so it's not only for adjectives."
+        },
+        {
+          "type": "heading",
+          "md": "فَعُول and فَعَّال: a lot, and again and again"
+        },
+        {
+          "type": "pattern",
+          "wazn": "فَعُول",
+          "roots": [
+            "غفر",
+            "شكر",
+            "ظلم",
+            "كفر"
+          ]
+        },
+        {
+          "type": "pattern",
+          "wazn": "فَعَّال",
+          "roots": [
+            "غفر",
+            "قهر",
+            "رزق",
+            "كذب",
+            "صبر",
+            "جبر",
+            "توب"
+          ]
+        },
+        {
+          "type": "text",
+          "md": "Grammarians call these the patterns of *mubālagha*, intensity. The Qur'an calls Allah all three of غَافِر, غَفُور and غَفَّار: the doer says that He forgives, and the other two say that He forgives a great deal and does it again and again. The same intensity can be negative: كَذَّاب is not just a liar but a habitual one."
+        },
+        {
+          "type": "examples",
+          "items": [
+            {
+              "word": "غَافِرِ",
+              "ref": "40:3",
+              "say": "ghāfiri",
+              "means": "(the) forgiver (of)",
+              "note": "فَاعِل: \"Forgiver of sin\"."
+            },
+            {
+              "word": "بِظَلَّٰمٍ",
+              "ref": "41:46",
+              "say": "bi-ẓallāmin",
+              "means": "unjust",
+              "note": "بِ + ظَلَّٰم (فَعَّال). \"Your Lord is not ever unjust to His servants\" — the intense pattern makes the denial complete."
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "md": "فَعْلَان: full of it"
+        },
+        {
+          "type": "pattern",
+          "wazn": "فَعْلَان",
+          "roots": [
+            "رحم",
+            "غضب"
+          ]
+        },
+        {
+          "type": "text",
+          "md": "فَعْلَان describes being full of a quality, often an overflowing one: غَضْبَان is someone filled with anger. ٱلرَّحْمَٰن (spelt in the Qur'an with a small alif) is on this pattern, which is why it's often explained as mercy that is vast and covers everything, next to ٱلرَّحِيم, mercy that lasts."
+        },
+        {
+          "type": "heading",
+          "md": "أَفْعَل: more, most"
+        },
+        {
+          "type": "pattern",
+          "wazn": "أَفْعَل",
+          "roots": [
+            "كبر",
+            "علم",
+            "ظلم",
+            "حسن",
+            "قرب",
+            "رحم"
+          ]
+        },
+        {
+          "type": "text",
+          "md": "أَفْعَل compares: more than, or the most. ٱللَّهُ أَكْبَرُ is literally \"Allah is greater\" — greater than anything you might set beside Him, which is why it's usually translated \"Allah is the Greatest\"."
+        },
+        {
+          "type": "examples",
+          "items": [
+            {
+              "word": "أَكْبَرُ",
+              "ref": "29:45",
+              "say": "akbaru",
+              "means": "greater",
+              "note": "\"And the remembrance of Allah is greater.\""
+            }
+          ]
+        },
+        {
+          "type": "tip",
+          "md": "Some أَفْعَل words describe colours and physical traits instead, like أَبْكَم \"mute\". When أَفْعَل doesn't make sense as \"more\", check the word page."
+        }
+      ],
+      "glosses": {
+        "رحم|أَفْعَل": "more merciful, most merciful",
+        "رحم|فَعِيل": "merciful (always)",
+        "رحم|فَعْلَان": "full of mercy, the Most Gracious",
+        "علم|فَعِيل": "all-knowing",
+        "علم|أَفْعَل": "more knowing, most knowing",
+        "غفر|فَعُول": "very forgiving",
+        "غفر|فَعَّال": "forgiving again and again",
+        "غفر|فَاعِل": "one who forgives"
+      },
+      "drill": {
+        "count": 10,
+        "kinds": [
+          "meaning",
+          "pattern",
+          "build",
+          "root"
+        ],
+        "words": [
+          [
+            "رحم",
+            "فَعِيل"
+          ],
+          [
+            "علم",
+            "فَعِيل"
+          ],
+          [
+            "حكم",
+            "فَعِيل"
+          ],
+          [
+            "سمع",
+            "فَعِيل"
+          ],
+          [
+            "بصر",
+            "فَعِيل"
+          ],
+          [
+            "قدر",
+            "فَعِيل"
+          ],
+          [
+            "عظم",
+            "فَعِيل"
+          ],
+          [
+            "غفر",
+            "فَعُول"
+          ],
+          [
+            "شكر",
+            "فَعُول"
+          ],
+          [
+            "ظلم",
+            "فَعُول"
+          ],
+          [
+            "كفر",
+            "فَعُول"
+          ],
+          [
+            "غفر",
+            "فَعَّال"
+          ],
+          [
+            "قهر",
+            "فَعَّال"
+          ],
+          [
+            "رزق",
+            "فَعَّال"
+          ],
+          [
+            "كذب",
+            "فَعَّال"
+          ],
+          [
+            "صبر",
+            "فَعَّال"
+          ],
+          [
+            "رحم",
+            "فَعْلَان"
+          ],
+          [
+            "غضب",
+            "فَعْلَان"
+          ],
+          [
+            "كبر",
+            "أَفْعَل"
+          ],
+          [
+            "علم",
+            "أَفْعَل"
+          ],
+          [
+            "ظلم",
+            "أَفْعَل"
+          ],
+          [
+            "حسن",
+            "أَفْعَل"
+          ],
+          [
+            "قرب",
+            "أَفْعَل"
+          ],
+          [
+            "رحم",
+            "أَفْعَل"
+          ]
+        ],
+        "patterns": [
+          "فَعِيل",
+          "فَعُول",
+          "فَعَّال",
+          "فَعْلَان",
+          "أَفْعَل",
+          "فَاعِل",
+          "مَفْعُول",
+          "فَعْل",
+          "فِعْل",
+          "فُعْل",
+          "فَعَل",
+          "مَفْعِلَة",
+          "فَعْلَة"
+        ]
+      }
+    },
+    {
+      "slug": "places",
+      "number": "1.5",
+      "title": "Places and tools: مَفْعَل, مَفْعِل, مِفْعَال",
+      "minutes": 10,
+      "goal": "Recognise the م that marks a place or a time, and the مِـ that marks a tool.",
+      "blocks": [
+        {
+          "type": "text",
+          "md": "Put a م in front of a root and you very often get *where* the action happens. مَسْجِد is the place of سُجُود, prostration — and it's where the English word *mosque* comes from."
+        },
+        {
+          "type": "pattern",
+          "wazn": "مَفْعِل",
+          "roots": [
+            "سجد",
+            "رجع",
+            "شرق",
+            "غرب"
+          ]
+        },
+        {
+          "type": "pattern",
+          "wazn": "مَفْعَل",
+          "roots": [
+            "سكن",
+            "قعد",
+            "شرب",
+            "نسك",
+            "جمع",
+            "خرج",
+            "رقد"
+          ]
+        },
+        {
+          "type": "text",
+          "md": "The east is where the sun rises (شَرَقَ), the west where it sets (غَرَبَ). A مَسْكَن is where you live, a مَقْعَد where you sit, a مَخْرَج the way out. The same shape can also mean a time, or the action itself: مَرْجِع is both \"the place you return to\" and \"the return\"."
+        },
+        {
+          "type": "examples",
+          "items": [
+            {
+              "word": "مَسَٰجِدَ",
+              "ref": "9:18",
+              "say": "masājida",
+              "means": "(the) mosques (of)",
+              "note": "\"The mosques of Allah are only maintained by those who believe…\" The plural of مَسْجِد, on مَفَاعِل."
+            },
+            {
+              "word": "ٱلْمَشْرِقُ",
+              "ref": "2:115",
+              "say": "al-mashriqu",
+              "means": "the east",
+              "note": "\"And to Allah belong the east and the west.\""
+            },
+            {
+              "word": "مَرْجِعُكُمْ",
+              "ref": "6:60",
+              "say": "marjiʿukum",
+              "means": "your return",
+              "note": "مَرْجِع + ـكُمْ: \"Then to Him is your return.\""
+            }
+          ]
+        },
+        {
+          "type": "tip",
+          "md": "Why مَفْعِل in one word and مَفْعَل in another? The grammarians tie the vowel to the verb's present tense, but several of the best-known words — مَسْجِد, مَشْرِق and مَغْرِب among them — are listed as exceptions to that rule. It's simpler to learn the vowel with each word."
+        },
+        {
+          "type": "heading",
+          "md": "The plural of a place: مَفَاعِل"
+        },
+        {
+          "type": "plurals",
+          "pattern": "مَفَاعِل",
+          "items": [
+            [
+              "سجد",
+              "مَفْعِل",
+              "mosques"
+            ],
+            [
+              "سكن",
+              "مَفْعَل",
+              "dwellings"
+            ],
+            [
+              "شرق",
+              "مَفْعِل",
+              "easts, places of sunrise"
+            ],
+            [
+              "غرب",
+              "مَفْعِل",
+              "wests, places of sunset"
+            ],
+            [
+              "قعد",
+              "مَفْعَل",
+              "positions, stations"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "md": "مَفَاعِل keeps the م and puts a long ā after the first root letter. When you see a word starting مَـ with ا after its second letter, it is very likely the plural of a place word."
+        },
+        {
+          "type": "heading",
+          "md": "Tools: مِفْعَال"
+        },
+        {
+          "type": "text",
+          "md": "With a kasra on the م and a long ā, the pattern often names the *thing you do it with*. مِصْبَاح, from the root of صُبْح \"morning\", is a lamp: the thing that makes it light."
+        },
+        {
+          "type": "examples",
+          "items": [
+            {
+              "word": "مِصْبَاحٌ",
+              "ref": "24:35",
+              "say": "miṣbāḥun",
+              "means": "a lamp",
+              "note": "The Verse of Light: \"…like a niche within which is a lamp\"."
+            },
+            {
+              "word": "ٱلْمِيزَانَ",
+              "ref": "55:7",
+              "say": "al-mīzāna",
+              "means": "the balance",
+              "note": "From و ز ن, to weigh: the tool for weighing, a scale. It's on مِفْعَال too — the و has turned into ي after the kasra. And it's the same word the grammarians used for the فَعَلَ scale itself."
+            }
+          ]
+        }
+      ],
+      "drill": {
+        "count": 8,
+        "kinds": [
+          "meaning",
+          "root",
+          "pattern",
+          "build"
+        ],
+        "words": [
+          [
+            "سجد",
+            "مَفْعِل"
+          ],
+          [
+            "رجع",
+            "مَفْعِل"
+          ],
+          [
+            "شرق",
+            "مَفْعِل"
+          ],
+          [
+            "غرب",
+            "مَفْعِل"
+          ],
+          [
+            "سكن",
+            "مَفْعَل"
+          ],
+          [
+            "قعد",
+            "مَفْعَل"
+          ],
+          [
+            "شرب",
+            "مَفْعَل"
+          ],
+          [
+            "جمع",
+            "مَفْعَل"
+          ],
+          [
+            "خرج",
+            "مَفْعَل"
+          ],
+          [
+            "صبح",
+            "مِفْعَال"
+          ],
+          [
+            "سجد",
+            "مَفْعِل",
+            "مَفَاعِل",
+            "mosques"
+          ],
+          [
+            "سكن",
+            "مَفْعَل",
+            "مَفَاعِل",
+            "dwellings"
+          ]
+        ],
+        "patterns": [
+          "مَفْعِل",
+          "مَفْعَل",
+          "مِفْعَال",
+          "مَفَاعِل",
+          "فَاعِل",
+          "مَفْعُول",
+          "فُعُول",
+          "فَعْل",
+          "فُعْل",
+          "فِعَال",
+          "فَعِيل",
+          "فَعُول",
+          "فَعَل",
+          "فِعْل"
+        ]
+      }
+    },
+    {
+      "slug": "plurals",
+      "number": "1.6",
+      "title": "Broken plurals",
+      "minutes": 12,
+      "goal": "Recognise the commonest plural patterns, and find the singular and the root inside a plural.",
+      "blocks": [
+        {
+          "type": "text",
+          "md": "Arabic has plurals that work like English *-s*: ـُونَ / ـِينَ for groups of men (مُؤْمِنُونَ, \"believers\") and ـَات for groups of women and for many things (ءَايَٰت, \"signs\"). But most nouns in the Qur'an do something else: they change shape on the inside. قَلْب \"heart\" becomes قُلُوب \"hearts\". This is the **broken plural**, جَمْع التَّكْسِير."
+        },
+        {
+          "type": "text",
+          "md": "In a broken plural the root stays put and the pattern changes. Which plural pattern a noun takes mostly has to be learned with the noun, but there are only a handful of common ones, and the root is always sitting there in plain sight. Here are the five you'll see most:"
+        },
+        {
+          "type": "plurals",
+          "pattern": "فُعُول",
+          "items": [
+            [
+              "قلب",
+              "فَعْل",
+              "hearts"
+            ],
+            [
+              "صدر",
+              "فَعْل",
+              "breasts, hearts"
+            ],
+            [
+              "ذنب",
+              "فَعْل",
+              "sins"
+            ],
+            [
+              "جند",
+              "فُعْل",
+              "soldiers, armies"
+            ],
+            [
+              "نجم",
+              "فَعْل",
+              "stars"
+            ],
+            [
+              "قبر",
+              "فَعْل",
+              "graves"
+            ]
+          ]
+        },
+        {
+          "type": "plurals",
+          "pattern": "أَفْعَال",
+          "items": [
+            [
+              "نهر",
+              "فَعَل",
+              "rivers"
+            ],
+            [
+              "عمل",
+              "فَعَل",
+              "deeds"
+            ],
+            [
+              "بصر",
+              "فَعَل",
+              "eyes, sight"
+            ],
+            [
+              "صحب",
+              "فَاعِل",
+              "companions",
+              true
+            ]
+          ]
+        },
+        {
+          "type": "plurals",
+          "pattern": "فِعَال",
+          "items": [
+            [
+              "جبل",
+              "فَعَل",
+              "mountains"
+            ],
+            [
+              "رجل",
+              "فَعُل",
+              "men",
+              true
+            ],
+            [
+              "عظم",
+              "فَعْل",
+              "bones",
+              true
+            ],
+            [
+              "بحر",
+              "فَعْل",
+              "seas"
+            ]
+          ]
+        },
+        {
+          "type": "plurals",
+          "pattern": "فُعَلَاء",
+          "items": [
+            [
+              "شرك",
+              "فَعِيل",
+              "partners"
+            ],
+            [
+              "شهد",
+              "فَعِيل",
+              "witnesses"
+            ],
+            [
+              "فقر",
+              "فَعِيل",
+              "the poor"
+            ],
+            [
+              "ضعف",
+              "فَعِيل",
+              "the weak"
+            ]
+          ],
+          "note": "فُعَلَاء is the usual plural of a فَعِيل word that describes people."
+        },
+        {
+          "type": "plurals",
+          "pattern": "فُعُل",
+          "items": [
+            [
+              "رسل",
+              "فَعُول",
+              "messengers"
+            ],
+            [
+              "سبل",
+              "فَعِيل",
+              "ways, paths"
+            ],
+            [
+              "كتب",
+              "فِعَال",
+              "books"
+            ]
+          ]
+        },
+        {
+          "type": "examples",
+          "items": [
+            {
+              "word": "وَكُتُبِهِۦ",
+              "ref": "2:285",
+              "say": "wa-kutubihī",
+              "means": "and His books",
+              "note": "وَ + كُتُب + ـهِۦ. كُتُب is the plural of كِتَاب."
+            },
+            {
+              "word": "وَرُسُلِهِۦ",
+              "ref": "2:285",
+              "say": "wa-rusulihī",
+              "means": "and His messengers",
+              "note": "وَ + رُسُل + ـهِۦ, in the same verse. رُسُل is the plural of رَسُول, on the same pattern as كُتُب."
+            },
+            {
+              "word": "ٱلْأَنْهَٰرُ",
+              "ref": "2:25",
+              "say": "al-anhāru",
+              "means": "the rivers",
+              "note": "\"Gardens beneath which rivers flow.\" The long ā of أَفْعَال is written with a small alif, as it often is in the Qur'an."
+            }
+          ]
+        },
+        {
+          "type": "tip",
+          "md": "The same shape can be singular in one word and plural in another. كِتَاب \"a book\" and جِبَال \"mountains\" are both on فِعَال. If a word could go either way, the Bayan word page says whether it's singular or plural."
+        }
+      ],
+      "drill": {
+        "count": 8,
+        "kinds": [
+          "root",
+          "pattern",
+          "build"
+        ],
+        "words": [
+          [
+            "قلب",
+            "فَعْل",
+            "فُعُول",
+            "hearts"
+          ],
+          [
+            "صدر",
+            "فَعْل",
+            "فُعُول",
+            "breasts, hearts"
+          ],
+          [
+            "ذنب",
+            "فَعْل",
+            "فُعُول",
+            "sins"
+          ],
+          [
+            "جند",
+            "فُعْل",
+            "فُعُول",
+            "soldiers, armies"
+          ],
+          [
+            "نجم",
+            "فَعْل",
+            "فُعُول",
+            "stars"
+          ],
+          [
+            "نهر",
+            "فَعَل",
+            "أَفْعَال",
+            "rivers"
+          ],
+          [
+            "عمل",
+            "فَعَل",
+            "أَفْعَال",
+            "deeds"
+          ],
+          [
+            "بصر",
+            "فَعَل",
+            "أَفْعَال",
+            "eyes, sight"
+          ],
+          [
+            "جبل",
+            "فَعَل",
+            "فِعَال",
+            "mountains"
+          ],
+          [
+            "بحر",
+            "فَعْل",
+            "فِعَال",
+            "seas"
+          ],
+          [
+            "شرك",
+            "فَعِيل",
+            "فُعَلَاء",
+            "partners"
+          ],
+          [
+            "شهد",
+            "فَعِيل",
+            "فُعَلَاء",
+            "witnesses"
+          ],
+          [
+            "فقر",
+            "فَعِيل",
+            "فُعَلَاء",
+            "the poor"
+          ],
+          [
+            "رسل",
+            "فَعُول",
+            "فُعُل",
+            "messengers"
+          ],
+          [
+            "سبل",
+            "فَعِيل",
+            "فُعُل",
+            "ways, paths"
+          ],
+          [
+            "كتب",
+            "فِعَال",
+            "فُعُل",
+            "books"
+          ],
+          [
+            "سجد",
+            "مَفْعِل",
+            "مَفَاعِل",
+            "mosques"
+          ],
+          [
+            "سكن",
+            "مَفْعَل",
+            "مَفَاعِل",
+            "dwellings"
+          ]
+        ],
+        "patterns": [
+          "فُعُول",
+          "أَفْعَال",
+          "فِعَال",
+          "فُعَلَاء",
+          "فُعُل",
+          "مَفَاعِل"
+        ]
+      }
+    }
+  ]
+}

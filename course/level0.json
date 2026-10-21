@@ -1,0 +1,212 @@
+{
+  "lessons": [
+    {
+      "slug": "letters",
+      "number": "0.1",
+      "title": "The letters and how they join",
+      "minutes": 10,
+      "goal": "Recognise the 28 letters, read right to left, and see why some words have gaps.",
+      "blocks": [
+        {"type": "text", "md": "Arabic is written and read **from right to left**. The alphabet has **28 letters**. They stand for consonants (ا, و and ي also spell the long vowels) — the short vowels are small marks written above or below the letters, which you will meet in the next lesson."},
+        {"type": "text", "md": "Letters inside a word are joined to each other, so most letters have a slightly different shape at the start, middle and end of a word. For example ب (bāʾ) looks like بـ at the start of a word, ـبـ in the middle and ـب at the end. The dot underneath is what tells it apart from ت (two dots above) and ث (three dots above)."},
+        {"type": "letters"},
+        {"type": "tip", "md": "**Six letters never join to the letter after them:** ا د ذ ر ز و. That is why some words have small gaps in them. Everything else joins on both sides."},
+        {"type": "examples", "items": [
+          {"word": "بِسْمِ", "ref": "1:1", "say": "bismi", "means": "in the name (of)", "note": "ب, س and م all join, so the word is one unbroken shape."},
+          {"word": "دَارِ", "ref": "10:25", "say": "dāri", "means": "(the) home (of)", "note": "د, ا and ر never join forward, so all three letters stand apart."},
+          {"word": "ٱلرَّحْمَٰنِ", "ref": "1:1", "say": "ar-raḥmāni", "means": "the Most Gracious", "note": "ٱ and ر don't join to the letter after them, so the word breaks after each of them: ٱل · رحمٰن."}
+        ]},
+        {"type": "text", "md": "Two more signs work like letters: **ء (hamza)**, a short catch in the throat like the break in \"uh-oh\", and **ة (tāʾ marbūṭa)**, a t-sound found at the end of many feminine nouns, pronounced -h when you stop on it."},
+        {"type": "tip", "md": "Nine sounds have no English equivalent: ح خ ص ض ط ظ ع غ ق. (ث and ذ are the two th-sounds of \"think\" and \"this\".) ص ض ط ظ are \"heavy\" versions of s, d, t and dh, said with the back of the tongue raised, which darkens the vowel next to them. (In tajwīd, خ غ ق are counted as heavy too.)"}
+      ],
+      "quiz": [
+        {"q": "Which way is Arabic read?", "options": ["Left to right", "Right to left", "Top to bottom"], "answer": 1, "explain": "Arabic is written and read from right to left."},
+        {"q": "Which of these letters never joins to the letter after it?", "options": ["ب", "س", "د", "م"], "answer": 2, "explain": "د is one of the six non-joining letters: ا د ذ ر ز و."},
+        {"q": "Why do the letters of دَارِ stand apart?", "options": ["It is a foreign word", "د, ا and ر never join to the next letter", "There is a pause mark"], "answer": 1, "explain": "All three letters are non-joiners, so none of them connects forward."},
+        {"q": "Which letter is the \"heavy\" s?", "options": ["س", "ش", "ص", "ث"], "answer": 2, "explain": "ص (ṣād) is the heavy s. س is a plain s, ش is sh and ث is th as in \"think\"."}
+      ]
+    },
+    {
+      "slug": "short-vowels",
+      "number": "0.2",
+      "title": "Short vowels and sukūn",
+      "minutes": 8,
+      "goal": "Read the three short vowels and the no-vowel sign, and see how they change a word's meaning.",
+      "blocks": [
+        {"type": "text", "md": "Short vowels are small marks on a letter. The Qur'an always writes them, so every word can be read exactly."},
+        {"type": "table", "head": ["Mark", "Name", "Sound", "Example"], "rows": [
+          ["بَ", "fatḥa (a stroke above)", "a", "ba"],
+          ["بِ", "kasra (a stroke below)", "i", "bi"],
+          ["بُ", "ḍamma (a small و above)", "u", "bu"],
+          ["بْ", "sukūn (a small circle above)", "no vowel", "b"]
+        ]},
+        {"type": "text", "md": "The same letters with different vowels make different words. The three letters ك ت ب are about writing:"},
+        {"type": "examples", "items": [
+          {"word": "كَتَبَ", "ref": "6:12", "say": "kataba", "means": "He (has) decreed, wrote", "note": "fatḥa on every letter: ka-ta-ba."},
+          {"word": "كُتِبَ", "ref": "2:183", "say": "kutiba", "means": "(it) was prescribed", "note": "ḍamma then kasra makes the verb passive: something was written for you."},
+          {"word": "قُلْ", "ref": "112:1", "say": "qul", "means": "Say!", "note": "The sukūn on ل means the word ends on the consonant, with no vowel after it."}
+        ]},
+        {"type": "tip", "md": "A letter carries **one** mark: a vowel or a sukūn. Reading Arabic is reading letter + mark, letter + mark."}
+      ],
+      "quiz": [
+        {"q": "What sound does a kasra (ـِ) make?", "options": ["a", "i", "u", "no vowel"], "answer": 1, "explain": "Kasra is the stroke under a letter and sounds i."},
+        {"q": "How is قُلْ read?", "options": ["qala", "qul", "qil", "qulu"], "answer": 1, "explain": "ق with ḍamma = qu, then ل with sukūn = l: qul."},
+        {"q": "What does a sukūn (ـْ) tell you?", "options": ["Double the letter", "The letter has no vowel after it", "Make the vowel long"], "answer": 1, "explain": "Sukūn marks a letter with no vowel."},
+        {"q": "كَتَبَ and كُتِبَ have the same letters. What is different?", "options": ["Nothing, they mean the same", "The vowels, which change the meaning", "One is a noun with no vowels"], "answer": 1, "explain": "kataba \"he wrote, decreed\" and kutiba \"it was prescribed\" differ only in their vowels."}
+      ]
+    },
+    {
+      "slug": "long-vowels",
+      "number": "0.3",
+      "title": "Long vowels",
+      "minutes": 8,
+      "goal": "Read ā, ī and ū, the ending ى, and tell when و and ي are consonants.",
+      "blocks": [
+        {"type": "text", "md": "A long vowel is a short vowel followed by its matching letter. Hold it for about twice as long."},
+        {"type": "table", "head": ["Written", "Sound", "How it's made"], "rows": [
+          ["ـَا", "ā", "fatḥa + ا"],
+          ["ـِي", "ī", "kasra + ي"],
+          ["ـُو", "ū", "ḍamma + و"]
+        ]},
+        {"type": "text", "md": "All three long vowels appear in words from the root ق و ل (to say):"},
+        {"type": "examples", "items": [
+          {"word": "قَالَ", "ref": "2:30", "say": "qāla", "means": "(he) said", "note": "fatḥa + ا gives the long ā."},
+          {"word": "قِيلَ", "ref": "2:11", "say": "qīla", "means": "it is said", "note": "kasra + ي gives the long ī."},
+          {"word": "يَقُولُ", "ref": "2:8", "say": "yaqūlu", "means": "(he) says", "note": "ḍamma + و gives the long ū."}
+        ]},
+        {"type": "text", "md": "**ى at the end of a word** (a yāʾ with no dots, called alif maqṣūra) is also read as a long ā:"},
+        {"type": "examples", "items": [
+          {"word": "مُوسَىٰ", "ref": "2:54", "say": "mūsā", "means": "Mūsā (Moses)", "note": "و after ḍamma is ū, and the final ى is ā."},
+          {"word": "عَلَى", "ref": "2:31", "say": "ʿalā", "means": "on", "note": "The final ى is read ā."}
+        ]},
+        {"type": "tip", "md": "When و or ي has its **own** vowel or a sukūn, it is a consonant (w, y), not a long vowel. In يَوْمِ (yawmi, \"day\") the ي is y and the و with sukūn after a fatḥa makes the sound aw."},
+        {"type": "examples", "items": [
+          {"word": "يَوْمِ", "ref": "1:4", "say": "yawmi", "means": "(the) day (of)", "note": "ي with fatḥa = ya, و with sukūn = w: yaw-mi."}
+        ]}
+      ],
+      "quiz": [
+        {"q": "Which letters make the long vowels?", "options": ["ب ت ث", "ا ي و", "ء ة ى"], "answer": 1, "explain": "ا makes ā, ي makes ī and و makes ū."},
+        {"q": "How is قِيلَ read?", "options": ["qila", "qīla", "qāla", "qūla"], "answer": 1, "explain": "ق with kasra followed by ي gives the long ī: qīla."},
+        {"q": "How is the final ى in عَلَى read?", "options": ["ī", "y", "ā"], "answer": 2, "explain": "A dotless ى at the end of a word is read as a long ā: ʿalā."},
+        {"q": "In يَوْمِ, what is the و?", "options": ["A long ū", "A consonant w (it has a sukūn)", "Silent"], "answer": 1, "explain": "و carries a sukūn, so it is a consonant: yaw-mi."}
+      ]
+    },
+    {
+      "slug": "shadda-tanwin",
+      "number": "0.4",
+      "title": "Shadda and tanwīn",
+      "minutes": 8,
+      "goal": "Double a letter with shadda, and read the -un, -in, -an endings.",
+      "blocks": [
+        {"type": "text", "md": "**Shadda (ـّ)**, a small w-shape above a letter, means the letter is said twice: once to close the syllable before it and once to start the next. The letter's vowel is written with it."},
+        {"type": "examples", "items": [
+          {"word": "رَبِّ", "ref": "1:2", "say": "rabbi", "means": "Lord (of)", "note": "ب has a shadda: rab-bi."},
+          {"word": "ٱلْحَقُّ", "ref": "2:26", "say": "al-ḥaqqu", "means": "the truth", "note": "ق has a shadda: al-ḥaq-qu."}
+        ]},
+        {"type": "text", "md": "A shadda can change the meaning completely:"},
+        {"type": "examples", "items": [
+          {"word": "عَلِمَ", "ref": "2:60", "say": "ʿalima", "means": "(he) knew", "note": "No shadda."},
+          {"word": "عَلَّمَ", "ref": "55:2", "say": "ʿallama", "means": "(He) taught", "note": "Doubling the ل turns \"he knew\" into \"he taught\", i.e. made someone know."}
+        ]},
+        {"type": "text", "md": "**Tanwīn** is a doubled vowel mark at the end of a word. It adds an n-sound:"},
+        {"type": "table", "head": ["Mark", "Sound", "Example"], "rows": [
+          ["ـٌ", "-un", "كِتَٰبٌ kitābun"],
+          ["ـٍ", "-in", "شَىْءٍ shayʾin"],
+          ["ـً", "-an (often written on an extra ا: ـًا)", "هُدًى hudan"]
+        ]},
+        {"type": "text", "md": "Tanwīn usually marks a noun as **indefinite** (\"a ...\"). The word with ٱلْ (\"the\") never has it:"},
+        {"type": "examples", "items": [
+          {"word": "كِتَٰبٌ", "ref": "2:89", "say": "kitābun", "means": "a book", "note": "Tanwīn: indefinite."},
+          {"word": "ٱلْكِتَٰبُ", "ref": "2:2", "say": "al-kitābu", "means": "the book", "note": "ٱلْ and a single ḍamma: definite, no tanwīn."},
+          {"word": "هُدًى", "ref": "2:2", "say": "hudan", "means": "a guidance", "note": "Tanwīn -an on a word ending in ى."}
+        ]},
+        {"type": "tip", "md": "When a reciter stops at the end of a verse, -un and -in are dropped and -an becomes a long ā. So kitābun is read kitāb when you pause on it."}
+      ],
+      "quiz": [
+        {"q": "What does a shadda do?", "options": ["Makes the vowel long", "Doubles the letter", "Silences the letter"], "answer": 1, "explain": "Shadda means the letter is pronounced twice: rab-bi."},
+        {"q": "What is the difference between عَلِمَ and عَلَّمَ?", "options": ["None", "\"he knew\" vs \"he taught\"", "past vs future"], "answer": 1, "explain": "The shadda on ل makes ʿallama, \"he taught\" (made someone know)."},
+        {"q": "How is كِتَٰبٌ read?", "options": ["kitāb", "kitābun", "al-kitābu", "kitāba"], "answer": 1, "explain": "The double ḍamma is tanwīn -un: kitābun (\"a book\")."},
+        {"q": "Can a word with ٱلْ (\"the\") have tanwīn?", "options": ["Yes", "No"], "answer": 1, "explain": "Tanwīn marks an indefinite noun, so it never appears together with ٱلْ."}
+      ]
+    },
+    {
+      "slug": "article",
+      "number": "0.5",
+      "title": "ٱلْ \"the\": sun and moon letters",
+      "minutes": 9,
+      "goal": "Read the article correctly before every letter, and know when the first alif is silent.",
+      "blocks": [
+        {"type": "text", "md": "ٱلْ (al-) means **\"the\"**. It is joined to the front of the noun. How you say it depends on the letter that comes next."},
+        {"type": "text", "md": "**Moon letters (14):** ا ب ج ح خ ع غ ف ق ك م ه و ي — the ل is pronounced and carries a sukūn."},
+        {"type": "examples", "items": [
+          {"word": "ٱلْقَمَرُ", "ref": "54:1", "say": "al-qamaru", "means": "the moon", "note": "ق is a moon letter, so the ل is heard: al-qamar. This word gives the group its name."},
+          {"word": "ٱلْحَمْدُ", "ref": "1:2", "say": "al-ḥamdu", "means": "the praise", "note": "ح is a moon letter."}
+        ]},
+        {"type": "text", "md": "**Sun letters (14):** ت ث د ذ ر ز س ش ص ض ط ظ ل ن — the ل is written but **not pronounced**. Instead the next letter is doubled and carries a shadda."},
+        {"type": "examples", "items": [
+          {"word": "ٱلشَّمْسُ", "ref": "36:40", "say": "ash-shamsu", "means": "the sun", "note": "Not al-shams: the ل disappears into the ش. This word gives the group its name."},
+          {"word": "ٱلرَّحْمَٰنِ", "ref": "1:1", "say": "ar-raḥmāni", "means": "the Most Gracious", "note": "ر is a sun letter."},
+          {"word": "ٱلنَّاسِ", "ref": "2:8", "say": "an-nāsi", "means": "the people", "note": "ن is a sun letter."}
+        ]},
+        {"type": "tip", "md": "Quick check: if the ل has a **sukūn** (ٱلْ) it's a moon letter; if the letter after it has a **shadda** (ٱلشَّ) it's a sun letter."},
+        {"type": "text", "md": "The first letter ٱ (alif with a small mark on top, called **hamzat al-waṣl**, the joining alif) is only pronounced when you start speaking with the word. In the middle of a sentence it is silent and the word joins onto the one before it:"},
+        {"type": "examples", "items": [
+          {"word": "ٱللَّهِ", "ref": "1:1", "say": "(bismi-)llāhi", "means": "(of) Allah", "note": "بِسْمِ ٱللَّهِ is read bismi-llāh, not bismi al-lāh: the ٱ is silent."},
+          {"word": "ٱلدِّينِ", "ref": "1:4", "say": "(yawmi-)d-dīni", "means": "(of) the Judgement", "note": "يَوْمِ ٱلدِّينِ: the ٱ is silent, د is a sun letter, so it's yawmid-dīn."}
+        ]}
+      ],
+      "quiz": [
+        {"q": "Is ش a sun letter or a moon letter?", "options": ["Sun", "Moon"], "answer": 0, "explain": "ش is a sun letter: ٱلشَّمْسُ is read ash-shams."},
+        {"q": "How is ٱلنَّاسِ read?", "options": ["al-nāsi", "an-nāsi", "a-nāsi"], "answer": 1, "explain": "ن is a sun letter, so the ل is silent and the ن doubles: an-nāsi."},
+        {"q": "How do you know ٱلْقَمَرُ starts with a moon letter?", "options": ["The ل has a sukūn", "The ق has a shadda", "There is no ٱ"], "answer": 0, "explain": "With a moon letter the ل is pronounced and carries a sukūn."},
+        {"q": "In بِسْمِ ٱللَّهِ, what happens to the ٱ of ٱللَّهِ?", "options": ["It is read a", "It is silent and the words run together", "It becomes a long ā"], "answer": 1, "explain": "Hamzat al-waṣl is silent in the middle of speech: bismi-llāh."}
+      ]
+    },
+    {
+      "slug": "quranic-spelling",
+      "number": "0.6",
+      "title": "Signs only the Qur'an uses",
+      "minutes": 10,
+      "goal": "Read the small alif, the small wāw and yāʾ, silent letters and the pause marks.",
+      "blocks": [
+        {"type": "text", "md": "The Qur'an is written in a traditional spelling (the rasm) that is older than modern Arabic spelling, with extra small signs added so it can be recited exactly. You'll see these on every page."},
+        {"type": "text", "md": "**The small (dagger) alif ـٰ** is a long ā written as a tiny alif above the letter instead of a full ا:"},
+        {"type": "examples", "items": [
+          {"word": "ذَٰلِكَ", "ref": "2:2", "say": "dhālika", "means": "that", "note": "Everyday Arabic writes ذلك the same way, without a full alif."},
+          {"word": "هَٰذَا", "ref": "2:25", "say": "hādhā", "means": "this", "note": "The small alif gives hā-."},
+          {"word": "ٱلصَّلَوٰةَ", "ref": "2:3", "say": "aṣ-ṣalāta", "means": "the prayer", "note": "Written with و and a small alif, read as ā. Everyday Arabic writes الصلاة."}
+        ]},
+        {"type": "text", "md": "**Small wāw ـۥ and small yāʾ ـۦ** after the pronoun ـهُ / ـهِ make its vowel long:"},
+        {"type": "examples", "items": [
+          {"word": "لَهُۥ", "ref": "2:102", "say": "lahū", "means": "for him", "note": "The small و lengthens -hu to -hū."},
+          {"word": "بِهِۦ", "ref": "2:22", "say": "bihī", "means": "with it", "note": "The small ي lengthens -hi to -hī."}
+        ]},
+        {"type": "text", "md": "**ى instead of ي:** the Qur'anic spelling often writes yāʾ without its dots, even in the middle or at the end of a word where it is read as y or ī:"},
+        {"type": "examples", "items": [
+          {"word": "شَىْءٍ", "ref": "2:20", "say": "shayʾin", "means": "thing", "note": "Everyday spelling is شيء."},
+          {"word": "ٱلَّذِى", "ref": "2:17", "say": "alladhī", "means": "the one who", "note": "Everyday spelling is الذي. Bayan's search accepts either."}
+        ]},
+        {"type": "text", "md": "**Silent letters** carry a small oval ـ۟ and are not pronounced:"},
+        {"type": "examples", "items": [
+          {"word": "ءَامَنُوا۟", "ref": "2:9", "say": "āmanū", "means": "(they) believed", "note": "The final ا has the small oval, so the word ends on -ū."}
+        ]},
+        {"type": "text", "md": "**Hamza** (the catch in the throat) can sit on its own (ء) or on a \"seat\": أ إ ؤ ئ. The sound is the same; the seat depends on the vowels around it."},
+        {"type": "table", "head": ["Pause mark", "Meaning"], "rows": [
+          ["ۘ (م)", "You must pause here"],
+          ["ۗ (قلى)", "Pausing is better"],
+          ["ۚ (ج)", "Pause or continue, both are fine"],
+          ["ۖ (صلى)", "Continuing is better"],
+          ["ۛ ... ۛ (three dots, in pairs)", "Pause at one of the two places, not both"],
+          ["ۙ (لا)", "Don't pause here"]
+        ]},
+        {"type": "tip", "md": "Pause marks sit between words and are not part of any word. If you paste a verse into Bayan's search with the marks still in it, they are ignored."}
+      ],
+      "quiz": [
+        {"q": "How is the small alif in ذَٰلِكَ read?", "options": ["It is silent", "As a long ā", "As a hamza"], "answer": 1, "explain": "The small (dagger) alif is a long ā: dhālika."},
+        {"q": "What does the small و in لَهُۥ do?", "options": ["Adds a w-sound", "Makes -hu long: -hū", "Nothing, it's decoration"], "answer": 1, "explain": "The small wāw lengthens the pronoun's vowel: lahū."},
+        {"q": "How is ءَامَنُوا۟ read?", "options": ["āmanūā", "āmanū", "amanu"], "answer": 1, "explain": "The last alif carries the small oval, so it is silent: āmanū."},
+        {"q": "What does the pause mark ۙ (لا) mean?", "options": ["You must pause", "Don't pause here", "Pause at one of two places"], "answer": 1, "explain": "لا means \"no\": don't stop at this point."}
+      ]
+    }
+  ]
+}

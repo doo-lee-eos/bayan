@@ -176,3 +176,20 @@ form.hero-search button.st-kbd-toggle svg { width: 18px; height: 18px; stroke: c
     .st-row { gap: 3px; }
     .st-kbd { padding: 8px 6px; }
 }
+
+/* Home-page link to the course */
+.course-cta {
+    display: block;
+    max-width: 440px;
+    margin: 22px auto 0;
+    padding: 12px 18px;
+    border: 1px solid var(--line, #e2d2b2);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, .35);
+    text-align: center;
+    text-decoration: none;
+    color: var(--text, #2e2013);
+}
+.course-cta:hover { border-color: #3f8a76; }
+.course-cta-title { display: block; font-weight: 600; color: #3f8a76; }
+.course-cta-sub { display: block; font-size: 13px; color: var(--muted, #7a6248); margin-top: 2px; }
